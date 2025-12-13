@@ -1,0 +1,32 @@
+[
+    {
+        "id_child": 2,
+        "id_parent": 1,
+        "id_patient_group": 1
+    },
+    {
+        "id_child": 5,
+        "id_parent": 1,
+        "id_patient_group": 2
+    },
+    {
+        "id_child": 18,
+        "id_parent": 1,
+        "id_patient_group": 3
+    },
+    {
+        "id_child": 8,
+        "id_parent": 3,
+        "id_patient_group": 4
+    },
+    {
+        "id_child": 14,
+        "id_parent": 3,
+        "id_patient_group": 5
+    },
+    {
+        "id_child": 2,
+        "id_parent": 1,
+        "id_patient_group": 6
+    }
+]

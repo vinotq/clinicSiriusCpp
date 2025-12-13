@@ -1,0 +1,13 @@
+[
+  {"id_diagnosis": 1, "name": "ОРВИ"},
+  {"id_diagnosis": 2, "name": "Грипп"},
+  {"id_diagnosis": 3, "name": "Гастрит"},
+  {"id_diagnosis": 4, "name": "Мигрень"},
+  {"id_diagnosis": 5, "name": "Артрит"},
+  {"id_diagnosis": 6, "name": "Сахарный диабет"},
+  {"id_diagnosis": 7, "name": "Гипертония"},
+  {"id_diagnosis": 8, "name": "Пневмония"},
+  {"id_diagnosis": 9, "name": "Невроз"},
+  {"id_diagnosis": 10, "name": "Дерматит"},
+  {"id_diagnosis": 11, "name": "Здоров"}
+]
