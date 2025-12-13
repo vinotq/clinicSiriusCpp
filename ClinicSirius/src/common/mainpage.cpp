@@ -1,0 +1,570 @@
+#include "mainpage.h"
+#include "profilewidget.h"
+#include "doctorwidget.h"
+#include "doctorprofilewidget.h"
+#include "appointmentbookingwidget.h"
+#include "patienthistorywidget.h"
+#include "managers/managerwidget.h"
+#include "managers/managerprofilewidget.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QScrollArea>
+#include <QFont>
+#include <QLabel>
+#include <QPushButton>
+#include <QToolButton>
+#include <QMenu>
+
+ServiceCard::ServiceCard(const QString& title, const QString& description,
+                         const QString& iconPath, QWidget *parent)
+    : QWidget(parent) {
+    setupUI(title, description, iconPath);
+    applyStyles();
+}
+
+void ServiceCard::setupUI(const QString& title, const QString& description, const QString& iconPath) {
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(20, 20, 20, 20);
+    layout->setSpacing(15);
+
+    QLabel *iconLabel = new QLabel(iconPath);
+    QFont iconFont;
+    iconFont.setPointSize(36);
+    iconLabel->setFont(iconFont);
+    iconLabel->setAlignment(Qt::AlignCenter);
+    layout->addWidget(iconLabel);
+
+    QLabel *titleLabel = new QLabel(title);
+    QFont titleFont;
+    titleFont.setPointSize(13);
+    titleFont.setBold(true);
+    titleLabel->setFont(titleFont);
+    titleLabel->setAlignment(Qt::AlignCenter);
+    layout->addWidget(titleLabel);
+
+    QLabel *descriptionLabel = new QLabel(description);
+    descriptionLabel->setWordWrap(true);
+    descriptionLabel->setAlignment(Qt::AlignCenter);
+    descriptionLabel->setProperty("class", "service-card-description");
+    layout->addWidget(descriptionLabel);
+
+    layout->addStretch();
+    setMinimumHeight(180);
+}
+
+void ServiceCard::applyStyles() {
+    setProperty("class", "service-card");
+}
+
+// ========== MainPage ==========
+
+MainPage::MainPage(QWidget *parent)
+    : QWidget(parent) {
+    setupUI();
+    applyStyles();
+}
+
+MainPage::~MainPage() {
+}
+
+void MainPage::setupUI() {
+    mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    headerLayout->setContentsMargins(40, 20, 40, 20);
+    headerLayout->setSpacing(20);
+
+    logoButton = new QPushButton("🏥 Clinic Sirius");
+    logoButton->setFlat(true);
+    QFont logoFont;
+    logoFont.setPointSize(16);
+    logoFont.setBold(true);
+    logoButton->setFont(logoFont);
+    logoButton->setProperty("class", "header-logo-btn");
+    
+    // Connect logo button click to show appropriate home page
+    connect(logoButton, &QPushButton::clicked, this, [this]() {
+        // Use currentUser which gets updated in setCurrentUser()
+        if (currentUser.type == LoginUser::DOCTOR) {
+            contentStack->setCurrentWidget(doctorLandingPage);
+        } else {
+            contentStack->setCurrentWidget(landingPage);
+        }
+    });
+    headerLayout->addWidget(logoButton);
+
+    headerLayout->addStretch();
+    buildHeader(headerLayout);
+
+    QWidget *headerWidget = new QWidget();
+    headerWidget->setLayout(headerLayout);
+    headerWidget->setProperty("class", "header-widget");
+    mainLayout->addWidget(headerWidget);
+
+    contentStack = new QStackedWidget(this);
+    mainLayout->addWidget(contentStack);
+
+    buildLanding();
+    profileWidget = new ProfileWidget(this);
+    connect(profileWidget, &ProfileWidget::requestLogout, this, &MainPage::logoutRequested);
+    connect(profileWidget, &ProfileWidget::requestAccountDeletion, this, &MainPage::logoutRequested);
+
+    appointmentBookingWidget = new AppointmentBookingWidget(this);
+    patientHistoryWidget = new PatientHistoryWidget(this);
+    managerWidget = new ManagerWidget(this);
+    managerProfileWidget = new ManagerProfileWidget(this);
+
+    contentStack->addWidget(landingPage);
+    contentStack->addWidget(profileWidget);
+    contentStack->addWidget(appointmentBookingWidget);
+    contentStack->addWidget(patientHistoryWidget);
+    contentStack->addWidget(managerWidget);
+    contentStack->addWidget(managerProfileWidget);
+    
+    connect(this, &MainPage::navigateToBooking, this, &MainPage::showBooking);
+    
+    doctorProfileWidget = new DoctorProfileWidget(this);
+    connect(doctorProfileWidget, &DoctorProfileWidget::requestLogout, this, &MainPage::logoutRequested);
+    connect(doctorProfileWidget, &DoctorProfileWidget::requestAccountDeletion, this, &MainPage::logoutRequested);
+    contentStack->addWidget(doctorProfileWidget);
+    
+    buildDoctorLanding();
+    contentStack->addWidget(doctorLandingPage);
+    
+    doctorWidget = new DoctorWidget(this);
+    connect(doctorWidget, &DoctorWidget::requestLogout, this, &MainPage::logoutRequested);
+    contentStack->addWidget(doctorWidget);
+}
+
+void MainPage::applyStyles() {
+    setProperty("class", "main-page");
+}
+
+void MainPage::buildHeader(QHBoxLayout *headerLayout) {
+    // Header: booking button removed — moved to doctor's schedule UI
+
+    userMenuButton = new QToolButton();
+    userMenuButton->setPopupMode(QToolButton::InstantPopup);
+    userMenuButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    userMenuButton->setText("Профиль");
+    userMenuButton->setMinimumHeight(40);
+    userMenuButton->setProperty("class", "header-profile-btn");
+
+    userMenu = new QMenu(userMenuButton);
+    profileAction = userMenu->addAction("👤 Профиль");
+    settingsAction = userMenu->addAction("⚙️ Настройки");
+    userMenu->addSeparator();
+    logoutAction = userMenu->addAction("🚪 Выход");
+
+    connect(profileAction, &QAction::triggered, this, [this]() { 
+        if (currentUser.type == LoginUser::DOCTOR) {
+            showDoctorProfile(false);
+        } else if (currentUser.type == LoginUser::MANAGER) {
+            // show manager-specific profile
+            managerProfileWidget->setUser(currentUser);
+            contentStack->setCurrentWidget(managerProfileWidget);
+        } else {
+            showProfile(false);
+        }
+    });
+    connect(settingsAction, &QAction::triggered, this, [this]() { 
+        if (currentUser.type == LoginUser::DOCTOR) {
+            showDoctorProfile(true);
+        } else {
+            showProfile(true);
+        }
+    });
+    connect(logoutAction, &QAction::triggered, this, &MainPage::logoutRequested);
+
+    userMenuButton->setMenu(userMenu);
+    headerLayout->addWidget(userMenuButton);
+}
+
+void MainPage::buildLanding() {
+    QWidget *contentWidget = new QWidget();
+    contentWidget->setProperty("class", "content-widget");
+    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(60, 30, 60, 30);
+    contentLayout->setSpacing(8);
+
+    QWidget *heroSection = new QWidget();
+    heroSection->setProperty("class", "hero-section-widget");
+    QVBoxLayout *heroLayout = new QVBoxLayout(heroSection);
+    heroLayout->setContentsMargins(30, 25, 30, 25);
+    heroLayout->setSpacing(12);
+
+    welcomeLabel = new QLabel("Добро пожаловать в Clinic Sirius");
+    QFont welcomeFont;
+    welcomeFont.setPointSize(24);
+    welcomeFont.setBold(true);
+    welcomeLabel->setFont(welcomeFont);
+    welcomeLabel->setProperty("class", "welcome-label");
+    heroLayout->addWidget(welcomeLabel);
+
+    descriptionLabel = new QLabel(
+        "Современная клиника с полным спектром медицинских услуг. "
+        "Запишитесь на прием онлайн и получите консультацию у лучших врачей."
+    );
+    descriptionLabel->setWordWrap(true);
+    descriptionLabel->setProperty("class", "description-label");
+    heroLayout->addWidget(descriptionLabel);
+
+    QHBoxLayout *actionsLayout = new QHBoxLayout();
+    actionsLayout->setSpacing(15);
+
+    QPushButton *profileActionButton = new QPushButton("👤 Личный кабинет");
+    profileActionButton->setMinimumHeight(45);
+    profileActionButton->setMinimumWidth(220);
+    profileActionButton->setProperty("class", "hero-profile-btn");
+    connect(profileActionButton, &QPushButton::clicked, this, [this]() { showProfile(false); });
+    actionsLayout->addWidget(profileActionButton);
+
+    QPushButton *bookingActionButton = new QPushButton("📅 Записать прием");
+    bookingActionButton->setMinimumHeight(45);
+    bookingActionButton->setMinimumWidth(220);
+    bookingActionButton->setProperty("class", "hero-booking-btn");
+    connect(bookingActionButton, &QPushButton::clicked, this, &MainPage::navigateToBooking);
+    actionsLayout->addWidget(bookingActionButton);
+
+    actionsLayout->addStretch();
+    heroLayout->addLayout(actionsLayout);
+    contentLayout->addWidget(heroSection);
+    contentLayout->addSpacing(24);
+
+    QLabel *servicesTitle = new QLabel("Наши услуги");
+    QFont servicesTitleFont;
+    servicesTitleFont.setPointSize(18);
+    servicesTitleFont.setBold(true);
+    servicesTitle->setFont(servicesTitleFont);
+    servicesTitle->setProperty("class", "services-title");
+    contentLayout->addWidget(servicesTitle);
+
+    QGridLayout *servicesLayout = new QGridLayout();
+    servicesLayout->setSpacing(18);
+    servicesLayout->setContentsMargins(0, 0, 0, 0);
+
+    ServiceCard *onlineBookingCard = new ServiceCard(
+        "Онлайн запись",
+        "Запишитесь на прием в врачу в удобное время прямо из личного кабинета",
+        "📅"
+    );
+    servicesLayout->addWidget(onlineBookingCard, 0, 0);
+
+    ServiceCard *doctorsCard = new ServiceCard(
+        "Квалифицированные врачи",
+        "Лучше специалисты различных направлений готовы помочь вам",
+        "👨‍⚕️"
+    );
+    servicesLayout->addWidget(doctorsCard, 0, 1);
+
+    ServiceCard *confidentialityCard = new ServiceCard(
+        "Конфиденциальность",
+        "Все данные пациентов защищены и хранятся в безопасности",
+        "🛡️"
+    );
+    servicesLayout->addWidget(confidentialityCard, 0, 2);
+
+    contentLayout->addLayout(servicesLayout);
+    contentLayout->addSpacing(24);
+
+    QLabel *featureTitle = new QLabel("Преимущества нашей клиники");
+    QFont featureTitleFont;
+    featureTitleFont.setPointSize(18);
+    featureTitleFont.setBold(true);
+    featureTitle->setFont(featureTitleFont);
+    featureTitle->setProperty("class", "services-title");
+    contentLayout->addWidget(featureTitle);
+
+    QGridLayout *featuresLayout = new QGridLayout();
+    featuresLayout->setSpacing(15);
+    featuresLayout->setContentsMargins(0, 0, 0, 0);
+
+    QStringList features = {
+        "✓ Удобное расписание — возможность выбрать удобное время приема",
+        "✓ Быстрое обслуживание — современное оборудование и опытный персонал",
+        "✓ Семейные услуги — прием для всех членов семьи",
+        "✓ Справки и документы — оформление необходимых документов"
+    };
+
+    int row = 0, col = 0;
+    for (const QString& feature : features) {
+        QLabel *featureLabel = new QLabel(feature);
+        featureLabel->setWordWrap(true);
+        featureLabel->setProperty("class", "feature-label");
+        featuresLayout->addWidget(featureLabel, row, col);
+
+        col++;
+        if (col == 2) {
+            col = 0;
+            row++;
+        }
+    }
+
+    contentLayout->addLayout(featuresLayout);
+    contentLayout->addSpacing(24);
+
+    QLabel *faqTitle = new QLabel("Часто задаваемые вопросы");
+    QFont faqTitleFont;
+    faqTitleFont.setPointSize(18);
+    faqTitleFont.setBold(true);
+    faqTitle->setFont(faqTitleFont);
+    faqTitle->setProperty("class", "services-title");
+    contentLayout->addWidget(faqTitle);
+
+    QStringList questions = {
+        "Как записаться на прием?",
+        "Какие документы нужны при визите?",
+        "Как отменить или перенести прием?",
+        "Как добавить членов семьи?"
+    };
+
+    QStringList answers = {
+        "Зарегистрируйтесь в системе, заполните личные данные и выберите удобное время приема из доступных слотов. Запись будет подтверждена автоматически.",
+        "При первом визите обязательно иметь паспорт, полис ОМС и СНИЛС. Дополнительно могут потребоваться другие документы в зависимости от причины посещения.",
+        "Отмену или перенос приема можно выполнить через личный кабинет за 24 часа до приема. В экстренных случаях позвоните в клинику.",
+        "В разделе 'Моя семья' добавьте данные членов семьи и выберите их как пациентов при записи на прием."
+    };
+
+    for (int i = 0; i < questions.size(); ++i) {
+        QLabel *questionLabel = new QLabel(questions[i]);
+        QFont questionFont;
+        questionFont.setPointSize(13);
+        questionFont.setBold(true);
+        questionLabel->setFont(questionFont);
+        questionLabel->setProperty("class", "faq-question-label");
+        contentLayout->addWidget(questionLabel);
+
+        QLabel *answerLabel = new QLabel(answers[i]);
+        answerLabel->setWordWrap(true);
+        answerLabel->setProperty("class", "faq-answer-label");
+        contentLayout->addWidget(answerLabel);
+    }
+
+    contentLayout->addSpacing(24);
+
+    QLabel *contactsTitle = new QLabel("Контакты");
+    QFont contactsTitleFont;
+    contactsTitleFont.setPointSize(18);
+    contactsTitleFont.setBold(true);
+    contactsTitle->setFont(contactsTitleFont);
+    contactsTitle->setAlignment(Qt::AlignCenter);
+    contactsTitle->setProperty("class", "services-title");
+    contentLayout->addWidget(contactsTitle);
+
+    contentLayout->addSpacing(12);
+
+    QHBoxLayout *contactsLayout = new QHBoxLayout();
+    contactsLayout->setSpacing(30);
+
+    QVBoxLayout *phoneLayout = new QVBoxLayout();
+    QLabel *phoneIconLabel = new QLabel("📞");
+    QFont phoneIconFont;
+    phoneIconFont.setPointSize(32);
+    phoneIconLabel->setFont(phoneIconFont);
+    phoneIconLabel->setAlignment(Qt::AlignCenter);
+    phoneLayout->addWidget(phoneIconLabel);
+
+    QLabel *phoneLabel = new QLabel("Телефон");
+    QFont phoneFont;
+    phoneFont.setPointSize(14);
+    phoneFont.setBold(true);
+    phoneLabel->setFont(phoneFont);
+    phoneLabel->setAlignment(Qt::AlignCenter);
+    phoneLabel->setProperty("class", "contact-label");
+    phoneLayout->addWidget(phoneLabel);
+
+    QLabel *phoneNumberLabel = new QLabel("+7 (999) 123-45-67");
+    QFont phoneNumberFont;
+    phoneNumberFont.setPointSize(12);
+    phoneNumberLabel->setFont(phoneNumberFont);
+    phoneNumberLabel->setAlignment(Qt::AlignCenter);
+    phoneNumberLabel->setProperty("class", "contact-value-label");
+    phoneLayout->addWidget(phoneNumberLabel);
+
+    QVBoxLayout *addressLayout = new QVBoxLayout();
+    QLabel *addressIconLabel = new QLabel("📍");
+    QFont addressIconFont;
+    addressIconFont.setPointSize(32);
+    addressIconLabel->setFont(addressIconFont);
+    addressIconLabel->setAlignment(Qt::AlignCenter);
+    addressLayout->addWidget(addressIconLabel);
+
+    QLabel *addressLabel = new QLabel("Адрес");
+    QFont addressFont;
+    addressFont.setPointSize(14);
+    addressFont.setBold(true);
+    addressLabel->setFont(addressFont);
+    addressLabel->setAlignment(Qt::AlignCenter);
+    addressLabel->setProperty("class", "contact-label");
+    addressLayout->addWidget(addressLabel);
+
+    QLabel *addressValueLabel = new QLabel("ул. Медицинская, д. 15, Москва");
+    QFont addressValueFont;
+    addressValueFont.setPointSize(12);
+    addressValueLabel->setFont(addressValueFont);
+    addressValueLabel->setAlignment(Qt::AlignCenter);
+    addressValueLabel->setProperty("class", "contact-value-label");
+    addressLayout->addWidget(addressValueLabel);
+
+    QVBoxLayout *hoursLayout = new QVBoxLayout();
+    QLabel *hoursIconLabel = new QLabel("🕐");
+    QFont hoursIconFont;
+    hoursIconFont.setPointSize(32);
+    hoursIconLabel->setFont(hoursIconFont);
+    hoursIconLabel->setAlignment(Qt::AlignCenter);
+    hoursLayout->addWidget(hoursIconLabel);
+
+    QLabel *hoursLabel = new QLabel("Часы работы");
+    QFont hoursFont;
+    hoursFont.setPointSize(14);
+    hoursFont.setBold(true);
+    hoursLabel->setFont(hoursFont);
+    hoursLabel->setAlignment(Qt::AlignCenter);
+    hoursLabel->setProperty("class", "contact-label");
+    hoursLayout->addWidget(hoursLabel);
+
+    QLabel *hoursValueLabel = new QLabel("Пн-Пт: 09:00 - 18:00\nСб-Вс: 10:00 - 16:00");
+    QFont hoursValueFont;
+    hoursValueFont.setPointSize(12);
+    hoursValueLabel->setFont(hoursValueFont);
+    hoursValueLabel->setAlignment(Qt::AlignCenter);
+    hoursValueLabel->setProperty("class", "contact-value-label");
+    hoursLayout->addWidget(hoursValueLabel);
+
+    contactsLayout->addLayout(phoneLayout);
+    contactsLayout->addLayout(addressLayout);
+    contactsLayout->addLayout(hoursLayout);
+
+    contentLayout->addLayout(contactsLayout);
+    contentLayout->addSpacing(20);
+
+    QScrollArea *scrollArea = new QScrollArea();
+    scrollArea->setWidget(contentWidget);
+    scrollArea->setWidgetResizable(true);
+
+    landingPage = new QWidget();
+    QVBoxLayout *wrapperLayout = new QVBoxLayout(landingPage);
+    wrapperLayout->setContentsMargins(0, 0, 0, 0);
+    wrapperLayout->addWidget(scrollArea);
+    landingPage->setProperty("class", "content-wrapper");
+
+    setMinimumSize(1000, 700);
+}
+
+void MainPage::buildDoctorLanding() {
+    doctorLandingPage = new QWidget();
+    doctorLandingPage->setProperty("class", "content-wrapper");
+    QVBoxLayout *mainLayout = new QVBoxLayout(doctorLandingPage);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+
+    QWidget *contentWidget = new QWidget();
+    contentWidget->setProperty("class", "content-widget");
+    QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
+    contentLayout->setContentsMargins(60, 30, 60, 30);
+    contentLayout->setSpacing(8);
+
+    // Hero section with welcome message
+    QWidget *heroSection = new QWidget();
+    heroSection->setProperty("class", "hero-section-widget");
+    QVBoxLayout *heroLayout = new QVBoxLayout(heroSection);
+    heroLayout->setContentsMargins(30, 25, 30, 25);
+    heroLayout->setSpacing(12);
+
+    QLabel *welcomeLabel = new QLabel("Добро пожаловать в кабинет врача");
+    QFont welcomeFont;
+    welcomeFont.setPointSize(24);
+    welcomeFont.setBold(true);
+    welcomeLabel->setFont(welcomeFont);
+    welcomeLabel->setProperty("class", "welcome-label");
+    heroLayout->addWidget(welcomeLabel);
+
+    QLabel *descriptionLabel = new QLabel(
+        "Управляйте своим расписанием, просматривайте назначения пациентов и ведите их медицинские записи."
+    );
+    descriptionLabel->setWordWrap(true);
+    descriptionLabel->setProperty("class", "description-label");
+    heroLayout->addWidget(descriptionLabel);
+
+    // Action buttons
+    QHBoxLayout *actionsLayout = new QHBoxLayout();
+    actionsLayout->setSpacing(15);
+
+    QPushButton *scheduleButton = new QPushButton("📅 Расписание");
+    scheduleButton->setMinimumHeight(45);
+    scheduleButton->setMinimumWidth(220);
+    scheduleButton->setProperty("class", "hero-booking-btn");
+    connect(scheduleButton, &QPushButton::clicked, this, [this]() {
+        contentStack->setCurrentWidget(doctorWidget);
+    });
+    actionsLayout->addWidget(scheduleButton);
+
+    QPushButton *historyButton = new QPushButton("📜 История приёмов пациента");
+    historyButton->setMinimumHeight(45);
+    historyButton->setMinimumWidth(220);
+    historyButton->setProperty("class", "hero-history-btn");
+    connect(historyButton, &QPushButton::clicked, this, [this]() {
+        contentStack->setCurrentWidget(patientHistoryWidget);
+    });
+    actionsLayout->addWidget(historyButton);
+
+    actionsLayout->addStretch();
+    heroLayout->addLayout(actionsLayout);
+    contentLayout->addWidget(heroSection);
+    contentLayout->addStretch();
+
+    QScrollArea *scrollArea = new QScrollArea();
+    scrollArea->setWidget(contentWidget);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setStyleSheet("QScrollArea { border: none; }");
+
+    mainLayout->addWidget(scrollArea);
+}
+void MainPage::setCurrentUser(const LoginUser &user) {
+    currentUser = user;
+    updateUserChip();
+    profileWidget->setUser(user);
+    doctorProfileWidget->setUser(user);
+    doctorWidget->setUser(user);
+    appointmentBookingWidget->setUser(user);
+    
+    // For doctors and managers show role-specific landing
+    if (user.type == LoginUser::DOCTOR) {
+        contentStack->setCurrentWidget(doctorLandingPage);
+    } else if (user.type == LoginUser::MANAGER) {
+        managerWidget->setUser(user);
+        managerProfileWidget->setUser(user);
+        contentStack->setCurrentWidget(managerWidget);
+    } else {
+        showHome();
+    }
+}
+
+void MainPage::updateUserChip() {
+    QString nameText = currentUser.name.isEmpty() ? "Профиль" : currentUser.name;
+    userMenuButton->setText(nameText);
+}
+
+void MainPage::showProfile(bool openSettingsTab) {
+    if (openSettingsTab) {
+        profileWidget->openSettingsTab();
+    }
+    contentStack->setCurrentWidget(profileWidget);
+}
+
+void MainPage::showDoctorProfile(bool openSettingsTab) {
+    if (openSettingsTab) {
+        doctorProfileWidget->openSettingsTab();
+    }
+    contentStack->setCurrentWidget(doctorProfileWidget);
+}
+
+void MainPage::showHome() {
+    contentStack->setCurrentWidget(landingPage);
+}
+
+void MainPage::showBooking() {
+    contentStack->setCurrentWidget(appointmentBookingWidget);
+}
