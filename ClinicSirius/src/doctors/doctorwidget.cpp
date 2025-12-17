@@ -12,6 +12,7 @@
 #include <QGroupBox>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <numeric>
 
 DoctorWidget::DoctorWidget(QWidget *parent)
     : QWidget(parent), dataManager(QCoreApplication::applicationDirPath() + "/../data") {
@@ -44,15 +45,21 @@ void DoctorWidget::buildMainPage() {
     layout->addWidget(mainTitleLabel);
     
     // Кнопки на весь функционал
-    viewScheduleButton = new QPushButton("📅 Посмотреть расписание");
+    viewScheduleButton = new QPushButton("Посмотреть расписание");
+    viewScheduleButton->setText(QString::fromUtf8("👩\u200D⚕️ ") + viewScheduleButton->text());
+    viewScheduleButton->setIconSize(QSize(18,18));
     viewScheduleButton->setMinimumHeight(60);
     layout->addWidget(viewScheduleButton);
     
-    addSlotButton = new QPushButton("➕ Добавить окно для приема");
+    addSlotButton = new QPushButton("Добавить окно для приема");
+    addSlotButton->setText(QString::fromUtf8("✅ ") + addSlotButton->text());
+    addSlotButton->setIconSize(QSize(16,16));
     addSlotButton->setMinimumHeight(60);
     layout->addWidget(addSlotButton);
     
-    bookAppointmentButton = new QPushButton("📝 Записать пациента на прием");
+    bookAppointmentButton = new QPushButton("Записать пациента на прием");
+    bookAppointmentButton->setText(QString::fromUtf8("✅ ") + bookAppointmentButton->text());
+    bookAppointmentButton->setIconSize(QSize(16,16));
     bookAppointmentButton->setMinimumHeight(60);
     layout->addWidget(bookAppointmentButton);
     
@@ -75,8 +82,10 @@ void DoctorWidget::buildSchedulePage() {
 
     // Week navigation (previous / week label / next)
     QHBoxLayout *weekNav = new QHBoxLayout();
-    prevWeekButton = new QPushButton("←");
+    prevWeekButton = new QPushButton();
     prevWeekButton->setMaximumWidth(40);
+    prevWeekButton->setText("←");
+    prevWeekButton->setIconSize(QSize(16,16));
     weekLabel = new QLabel();
     weekLabel->setAlignment(Qt::AlignCenter);
     QFont wl; wl.setBold(true); wl.setPointSize(11); weekLabel->setFont(wl);
@@ -102,11 +111,19 @@ void DoctorWidget::buildSchedulePage() {
     
     // Кнопки действий
     QHBoxLayout *actionsLayout = new QHBoxLayout();
-    bookFromScheduleButton = new QPushButton("📝 Записать на выбранный слот");
-    deleteSlotButton = new QPushButton("🗑 Удалить слот");
+    bookFromScheduleButton = new QPushButton("Записать на выбранный слот");
+    bookFromScheduleButton->setText(QString::fromUtf8("✅ ") + bookFromScheduleButton->text());
+    bookFromScheduleButton->setIconSize(QSize(16,16));
+    deleteSlotButton = new QPushButton("Удалить слот");
+    deleteSlotButton->setText(QString::fromUtf8("❌ ") + deleteSlotButton->text());
+    deleteSlotButton->setIconSize(QSize(16,16));
     // Новая кнопка
-    addSlotInScheduleButton = new QPushButton("➕ Добавить окно для приема");
-    backButton = new QPushButton("◀ Назад");
+    addSlotInScheduleButton = new QPushButton("Добавить окно для приема");
+    addSlotInScheduleButton->setText(QString::fromUtf8("✅ ") + addSlotInScheduleButton->text());
+    addSlotInScheduleButton->setIconSize(QSize(16,16));
+    backButton = new QPushButton("Назад");
+    backButton->setText("← " + backButton->text());
+    backButton->setIconSize(QSize(16,16));
     actionsLayout->addWidget(bookFromScheduleButton);
     actionsLayout->addWidget(deleteSlotButton);
     actionsLayout->addWidget(addSlotInScheduleButton);
@@ -259,32 +276,27 @@ void DoctorWidget::loadSchedule() {
     QList<AppointmentSchedule> schedules = dataManager.getDoctorSchedules(currentUser.id);
 
     // Determine grid step (in seconds) using GCD of all schedule durations and their offsets from day start.
-    auto gcd = [](qint64 a, qint64 b) {
-        if (a < 0) a = -a; if (b < 0) b = -b;
-        while (b != 0) { qint64 t = a % b; a = b; b = t; }
-        return a;
-    };
-
-    qint64 gcdSeconds = 0;
+    // Use std::gcd from C++17; start with minimal interval of 60 seconds (1 minute)
+    qint64 gcdSeconds = 60; // Minimal step 1 minute
     const qint64 defaultIntervalSec = 20 * 60; // 20 minutes
     const qint64 dayStartSec = qint64(6 * 60 * 60);
 
     for (const AppointmentSchedule &s : schedules) {
         qint64 durSec = s.time_from.secsTo(s.time_to);
         if (durSec > 0) {
-            gcdSeconds = gcdSeconds == 0 ? durSec : gcd(gcdSeconds, durSec);
+            gcdSeconds = std::gcd(gcdSeconds, durSec);
         }
-        // offset from day start in seconds
+        // offset from day start in seconds (normalized to 24h)
         qint64 startSec = qint64(s.time_from.time().hour()) * 3600 + qint64(s.time_from.time().minute()) * 60 + qint64(s.time_from.time().second());
         qint64 offsetSec = startSec - dayStartSec;
         if (offsetSec > 0) {
-            gcdSeconds = gcdSeconds == 0 ? offsetSec : gcd(gcdSeconds, offsetSec);
+            gcdSeconds = std::gcd(gcdSeconds, offsetSec);
         }
     }
 
-    if (gcdSeconds <= 0) gcdSeconds = defaultIntervalSec;
+    if (gcdSeconds < 60) gcdSeconds = 60; // Ensure minimum 1 minute step
 
-    // Convert to minutes grid step; if gcdSeconds < 60 fall back to 1 minute.
+    // Convert to minutes grid step
     int minimalInterval = int(gcdSeconds / 60);
     if (minimalInterval < 1) minimalInterval = 1;
 
@@ -387,6 +399,7 @@ void DoctorWidget::onBackFromSchedule() {
 }
 
 void DoctorWidget::onVisitCompleted() {
+    loadSchedule(); // Refresh schedule after completing visit
     stackedWidget->setCurrentIndex(mainPageIndex);
 }
 

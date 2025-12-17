@@ -28,6 +28,7 @@ private slots:
     void onSaveAppointment();
     void onFinishVisit();
     void onSelectDoctorForBooking();
+    void onCancelBooking();
 
 private:
     void buildVisitUI();
@@ -57,6 +58,7 @@ private:
     QComboBox *doctorComboBooking = nullptr;
     QComboBox *scheduleComboBooking = nullptr;
     QPushButton *bookButton = nullptr;
+    QPushButton *cancelBookingButton = nullptr;
     QLabel *bookingStatusLabel = nullptr;
 
     QList<AppointmentSchedule> availableSchedules;
