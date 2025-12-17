@@ -13,6 +13,8 @@
 #include <QMessageBox>
 #include <QStackedWidget>
 #include <QSpinBox>
+#include <QIcon>
+#include <QPixmap>
 #include <numeric>
 
 DoctorWidget::DoctorWidget(QWidget *parent)
@@ -46,17 +48,20 @@ void DoctorWidget::buildMainPage() {
     layout->addWidget(mainTitleLabel);
     
     // Кнопки на весь функционал
-    viewScheduleButton = new QPushButton("📅 Посмотреть расписание");
+    viewScheduleButton = new QPushButton("Посмотреть расписание");
+    viewScheduleButton->setIcon(QIcon(":/images/icon-calendar.svg"));
     viewScheduleButton->setIconSize(QSize(18,18));
     viewScheduleButton->setMinimumHeight(60);
     layout->addWidget(viewScheduleButton);
     
-    addSlotButton = new QPushButton("➕ Добавить окно для приема");
+    addSlotButton = new QPushButton("Добавить окно для приема");
+    addSlotButton->setIcon(QIcon(":/images/icon-add.svg"));
     addSlotButton->setIconSize(QSize(16,16));
     addSlotButton->setMinimumHeight(60);
     layout->addWidget(addSlotButton);
     
-    bookAppointmentButton = new QPushButton("📝 Записать пациента на прием");
+    bookAppointmentButton = new QPushButton("Записать пациента на прием");
+    bookAppointmentButton->setIcon(QIcon(":/images/icon-edit.svg"));
     bookAppointmentButton->setIconSize(QSize(16,16));
     bookAppointmentButton->setMinimumHeight(60);
     layout->addWidget(bookAppointmentButton);
@@ -81,15 +86,21 @@ void DoctorWidget::buildSchedulePage() {
     // Week navigation (previous / week label / next)
     QHBoxLayout *weekNav = new QHBoxLayout();
     prevWeekButton = new QPushButton();
-    prevWeekButton->setMaximumWidth(40);
-    prevWeekButton->setText("←");
+    prevWeekButton->setMaximumWidth(44);
+    prevWeekButton->setIcon(QIcon(":/images/icon-arrow-left.svg"));
     prevWeekButton->setIconSize(QSize(16,16));
+    prevWeekButton->setToolTip("Предыдущая неделя");
     weekLabel = new QLabel();
     weekLabel->setAlignment(Qt::AlignCenter);
     QFont wl; wl.setBold(true); wl.setPointSize(11); weekLabel->setFont(wl);
-    nextWeekButton = new QPushButton("→");
-    nextWeekButton->setMaximumWidth(40);
+    nextWeekButton = new QPushButton();
+    nextWeekButton->setIcon(QIcon(":/images/icon-arrow-right.svg"));
+    nextWeekButton->setIconSize(QSize(16,16));
+    nextWeekButton->setMaximumWidth(44);
+    nextWeekButton->setToolTip("Следующая неделя");
     todayButton = new QPushButton("Сегодня");
+    todayButton->setIcon(QIcon(":/images/icon-calendar.svg"));
+    todayButton->setIconSize(QSize(14,14));
     todayButton->setMaximumWidth(90);
     weekNav->addWidget(prevWeekButton);
     weekNav->addStretch();
@@ -102,7 +113,10 @@ void DoctorWidget::buildSchedulePage() {
     // Time slot duration input (for grid granularity in schedule)
     QHBoxLayout *timeSlotLayout = new QHBoxLayout();
     timeSlotLayout->addStretch();
-    QLabel *timeSlotLabel = new QLabel("⏱️ Время приема (мин):");
+    QLabel *timeSlotIcon = new QLabel();
+    timeSlotIcon->setPixmap(QPixmap(":/images/icon-clock.svg").scaled(18, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    timeSlotIcon->setFixedSize(18, 18);
+    QLabel *timeSlotLabel = new QLabel("Время приема (мин):");
     timeSlotDurationSpinBox = new QSpinBox();
     timeSlotDurationSpinBox->setMinimum(5);
     timeSlotDurationSpinBox->setMaximum(120);
@@ -110,6 +124,7 @@ void DoctorWidget::buildSchedulePage() {
     timeSlotDurationSpinBox->setSuffix(" мин");
     timeSlotDurationSpinBox->setMaximumWidth(100);
     selectedIntervalMinutes = 20;
+    timeSlotLayout->addWidget(timeSlotIcon);
     timeSlotLayout->addWidget(timeSlotLabel);
     timeSlotLayout->addWidget(timeSlotDurationSpinBox);
     layout->addLayout(timeSlotLayout);
@@ -124,15 +139,18 @@ void DoctorWidget::buildSchedulePage() {
     
     // Кнопки действий
     QHBoxLayout *actionsLayout = new QHBoxLayout();
-    bookFromScheduleButton = new QPushButton("📝 Записать на выбранный слот");
+    bookFromScheduleButton = new QPushButton("Записать на выбранный слот");
+    bookFromScheduleButton->setIcon(QIcon(":/images/icon-edit.svg"));
     bookFromScheduleButton->setIconSize(QSize(16,16));
-    deleteSlotButton = new QPushButton("🗑 Удалить слот");
+    deleteSlotButton = new QPushButton("Удалить слот");
+    deleteSlotButton->setIcon(QIcon(":/images/icon-trash.svg"));
     deleteSlotButton->setIconSize(QSize(16,16));
     // Новая кнопка
-    addSlotInScheduleButton = new QPushButton("➕ Добавить окно для приема");
+    addSlotInScheduleButton = new QPushButton("Добавить окно для приема");
+    addSlotInScheduleButton->setIcon(QIcon(":/images/icon-add.svg"));
     addSlotInScheduleButton->setIconSize(QSize(16,16));
     backButton = new QPushButton("Назад");
-    backButton->setText("← " + backButton->text());
+    backButton->setIcon(QIcon(":/images/icon-arrow-left.svg"));
     backButton->setIconSize(QSize(16,16));
     actionsLayout->addWidget(bookFromScheduleButton);
     actionsLayout->addWidget(deleteSlotButton);
@@ -154,6 +172,7 @@ void DoctorWidget::buildSchedulePage() {
     });
     
     connect(scheduleTable, &QTableWidget::cellClicked, this, &DoctorWidget::onCellClicked);
+    connect(scheduleTable, &QTableWidget::cellDoubleClicked, this, &DoctorWidget::onCellDoubleClicked);
     connect(deleteSlotButton, &QPushButton::clicked, this, [this]() {
         QTableWidgetItem *item = scheduleTable->currentItem();
         if (!item) {
@@ -190,6 +209,16 @@ void DoctorWidget::buildSchedulePage() {
         int schId = item->data(Qt::UserRole).toInt();
         if (schId <= 0) {
             QMessageBox::warning(this, "Ошибка", "Выберите свободный слот");
+            return;
+        }
+        AppointmentSchedule sch = dataManager.getScheduleById(schId);
+        QString st = sch.status.trimmed().toLower();
+        if (st == "booked" || st == "busy") {
+            QMessageBox::warning(this, "Слот занят", "Слот уже занят. Откройте его кликом по таблице, чтобы завершить приём.");
+            return;
+        }
+        if (sch.time_from.isValid() && sch.time_from < QDateTime::currentDateTime()) {
+            QMessageBox::warning(this, "Прошедшее время", "Нельзя записывать на прошедшие слоты.");
             return;
         }
         DoctorVisitDialog dlg(currentUser.id, schId, 1, this);
@@ -271,6 +300,8 @@ void DoctorWidget::loadSchedule() {
     if (dayOfWeek != 1) {
         start = start.addDays(1 - dayOfWeek); // Move to Monday of the same week
     }
+    // Normalize internal pointer to the week start so navigation is consistent
+    scheduleStartDate = start;
     
     // Update week label showing range
     if (weekLabel) {
@@ -321,7 +352,7 @@ void DoctorWidget::loadSchedule() {
 
     // Populate cells with schedule blocks using minute granularity
     for (const AppointmentSchedule &s : schedules) {
-        int dayOffset = scheduleStartDate.daysTo(s.time_from.date());
+        int dayOffset = start.daysTo(s.time_from.date());
         int column = 1 + dayOffset;
         if (column < 1 || column >= scheduleTable->columnCount()) continue;
 
@@ -342,6 +373,9 @@ void DoctorWidget::loadSchedule() {
         if (st == "booked" || st == "busy") {
             statusText = "Занято";
             bgColor = QColor(255, 165, 0);
+        } else if (st == "done") {
+            statusText = "Завершено";
+            bgColor = QColor(96, 165, 250); // blue
         }
 
         // Remove any existing widgets in the spanned area
@@ -421,6 +455,67 @@ void DoctorWidget::onCellClicked(int row, int column) {
         connect(&dlg, &DoctorVisitDialog::visitCompleted, this, &DoctorWidget::onVisitCompleted);
         dlg.exec();
     }
+}
+
+void DoctorWidget::onCellDoubleClicked(int row, int column) {
+    if (column == 0) return;
+    QTableWidgetItem *it = scheduleTable->item(row, column);
+    int probeRow = row;
+    while (!it && probeRow >= 0) {
+        --probeRow;
+        it = scheduleTable->item(probeRow, column);
+    }
+    if (!it) return;
+    int schId = it->data(Qt::UserRole).toInt();
+    if (schId <= 0) return;
+
+    AppointmentSchedule sch = dataManager.getScheduleById(schId);
+    QString st = sch.status.trimmed().toLower();
+    if (st != "done") return; // только для завершённых
+
+    // найти приём по расписанию
+    QList<Appointment> appts = dataManager.getAppointmentsByDoctor(currentUser.id);
+    Appointment ap;
+    for (const Appointment &a : appts) {
+        if (a.id_ap_sch == schId) { ap = a; break; }
+    }
+    Patient p = dataManager.getPatientById(ap.id_patient);
+    Recipe r = dataManager.getRecipeByAppointmentId(ap.id_ap);
+    Diagnosis diag = dataManager.getDiagnosisById(r.id_diagnosis);
+
+    QDialog dlg(this);
+    dlg.setWindowTitle("Завершённый приём");
+    dlg.setModal(true);
+    dlg.resize(480, 360);
+    QVBoxLayout *layout = new QVBoxLayout(&dlg);
+    layout->addWidget(new QLabel(QString("Дата: %1").arg(sch.time_from.toString("dd.MM.yyyy HH:mm"))));
+    layout->addWidget(new QLabel(QString("Пациент: %1").arg(p.fullName())));
+    layout->addWidget(new QLabel(QString("Диагноз: %1").arg(diag.name.isEmpty() ? "—" : diag.name)));
+
+    if (!r.complaints.isEmpty()) {
+        QLabel *complLbl = new QLabel("Жалобы:");
+        layout->addWidget(complLbl);
+        QTextEdit *complText = new QTextEdit();
+        complText->setReadOnly(true);
+        complText->setPlainText(r.complaints);
+        complText->setMinimumHeight(80);
+        layout->addWidget(complText);
+    }
+
+    QLabel *recsLbl = new QLabel("Назначение / рекомендации:");
+    layout->addWidget(recsLbl);
+    QTextEdit *recs = new QTextEdit();
+    recs->setReadOnly(true);
+    recs->setPlainText(r.recommendations);
+    recs->setMinimumHeight(120);
+    layout->addWidget(recs);
+
+    QPushButton *closeBtn = new QPushButton("Закрыть");
+    closeBtn->setDefault(true);
+    connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+    layout->addStretch();
+    layout->addWidget(closeBtn, 0, Qt::AlignRight);
+    dlg.exec();
 }
 
 void DoctorWidget::onBackFromSchedule() {

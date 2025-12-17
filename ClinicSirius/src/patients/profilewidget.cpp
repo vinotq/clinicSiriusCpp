@@ -56,10 +56,10 @@ void ProfileWidget::buildProfileTab() {
     // ===== Информация пользователя - Карточка =====
     QWidget *infoCard = new QWidget();
     infoCard->setProperty("class", "modern-card");
-    infoCard->setMaximumHeight(180);
+    infoCard->setMinimumHeight(180);
     QVBoxLayout *infoLayout = new QVBoxLayout(infoCard);
     infoLayout->setContentsMargins(20, 16, 20, 16);
-    infoLayout->setSpacing(12);
+    infoLayout->setSpacing(10);
 
     // Заголовок карточки
     QLabel *profileTitle = new QLabel("Основная информация");
@@ -115,7 +115,10 @@ void ProfileWidget::buildProfileTab() {
     snilsRow->setSpacing(8);
     snilsRow->setContentsMargins(0, 0, 0, 0);
     QLabel *snilsLabel = new QLabel("СНИЛС:");
-    QPushButton *snilsShowBtn = new QPushButton("👁️");
+    QPushButton *snilsShowBtn = new QPushButton();
+    snilsShowBtn->setCheckable(true);
+    snilsShowBtn->setIcon(QIcon(":/images/icon-eye.svg"));
+    snilsShowBtn->setIconSize(QSize(16, 16));
     snilsShowBtn->setMaximumWidth(32);
     snilsShowBtn->setMaximumHeight(24);
     snilsShowBtn->setProperty("class", "icon-button");
@@ -131,7 +134,10 @@ void ProfileWidget::buildProfileTab() {
     omsRow->setSpacing(8);
     omsRow->setContentsMargins(0, 0, 0, 0);
     QLabel *omsLabel = new QLabel("Полис ОМС:");
-    QPushButton *omsShowBtn = new QPushButton("👁️");
+    QPushButton *omsShowBtn = new QPushButton();
+    omsShowBtn->setCheckable(true);
+    omsShowBtn->setIcon(QIcon(":/images/icon-eye.svg"));
+    omsShowBtn->setIconSize(QSize(16, 16));
     omsShowBtn->setMaximumWidth(32);
     omsShowBtn->setMaximumHeight(24);
     omsShowBtn->setProperty("class", "icon-button");
@@ -143,33 +149,26 @@ void ProfileWidget::buildProfileTab() {
     extraCol->addWidget(omsValue);
 
     // Логика показа/скрытия СНИЛС
-    connect(snilsShowBtn, &QPushButton::clicked, this, [this, snilsShowBtn]() {
-        if (snilsValue->text() == "***") {
+    connect(snilsShowBtn, &QPushButton::toggled, this, [this, snilsShowBtn](bool checked) {
             Patient p = dataManager.getPatientById(currentUser.id);
-            snilsValue->setText(p.snils);
-            snilsShowBtn->setText("🙈");
-        } else {
-            snilsValue->setText("***");
-            snilsShowBtn->setText("👁️");
-        }
+        snilsValue->setText(checked ? p.snils : "***");
+        snilsShowBtn->setIcon(QIcon(checked ? ":/images/icon-eye-off.svg" : ":/images/icon-eye.svg"));
     });
 
     // Логика показа/скрытия ОМС
-    connect(omsShowBtn, &QPushButton::clicked, this, [this, omsShowBtn]() {
-        if (omsValue->text() == "***") {
+    connect(omsShowBtn, &QPushButton::toggled, this, [this, omsShowBtn](bool checked) {
             Patient p = dataManager.getPatientById(currentUser.id);
-            omsValue->setText(p.oms);
-            omsShowBtn->setText("🙈");
-        } else {
-            omsValue->setText("***");
-            omsShowBtn->setText("👁️");
-        }
+        omsValue->setText(checked ? p.oms : "***");
+        omsShowBtn->setIcon(QIcon(checked ? ":/images/icon-eye-off.svg" : ":/images/icon-eye.svg"));
     });
 
     gridLayout->addLayout(leftCol);
     gridLayout->addLayout(rightCol);
     gridLayout->addLayout(extraCol);
     gridLayout->addStretch();
+    gridLayout->setStretch(0, 1);
+    gridLayout->setStretch(1, 1);
+    gridLayout->setStretch(2, 1);
 
     infoLayout->addWidget(infoGrid);
     scrollable->addContent(infoCard);
@@ -184,6 +183,7 @@ void ProfileWidget::buildProfileTab() {
     familyCountBadge->setLabel("Членов семьи");
     familyCountBadge->setValue(0);
     familyCountBadge->setBadgeType(StatsBadge::Primary);
+    familyCountBadge->setIcon(":/images/icon-user.svg");
 
     statsLayout->addWidget(familyCountBadge);
     statsLayout->addStretch();
@@ -220,7 +220,9 @@ void ProfileWidget::buildProfileTab() {
     QHBoxLayout *familyActions = new QHBoxLayout();
     familyActions->setSpacing(8);
     
-    removeFamilyButton = new QPushButton("❌ Удалить из семьи");
+    removeFamilyButton = new QPushButton("Удалить из семьи");
+    removeFamilyButton->setIcon(QIcon(":/images/icon-trash.svg"));
+    removeFamilyButton->setIconSize(QSize(16, 16));
     removeFamilyButton->setMinimumHeight(36);
     removeFamilyButton->setProperty("class", "danger-button");
 
@@ -247,7 +249,9 @@ void ProfileWidget::buildProfileTab() {
     codesLayout->addWidget(codesTitle);
 
     // Генерация кода
-    generateCodeButton = new QPushButton("🔐 Сгенерировать код");
+    generateCodeButton = new QPushButton("Сгенерировать код");
+    generateCodeButton->setIcon(QIcon(":/images/icon-lock.svg"));
+    generateCodeButton->setIconSize(QSize(16, 16));
     generateCodeButton->setMinimumHeight(36);
     invitationCodeDisplay = new QLineEdit();
     invitationCodeDisplay->setText("Нет активного кода");
@@ -266,7 +270,9 @@ void ProfileWidget::buildProfileTab() {
     useCodeLabel->setProperty("class", "use-code-label");
     codesLayout->addWidget(useCodeLabel);
 
-    useCodeButton = new QPushButton("🔓 Открыть диалог");
+    useCodeButton = new QPushButton("Открыть диалог");
+    useCodeButton->setIcon(QIcon(":/images/icon-unlock.svg"));
+    useCodeButton->setIconSize(QSize(16, 16));
     useCodeButton->setMinimumHeight(36);
 
     codesLayout->addWidget(useCodeButton);
@@ -334,13 +340,19 @@ void ProfileWidget::buildSettingsTab() {
 
     cardLayout->addLayout(form);
 
-    saveButton = new QPushButton("💾 Сохранить");
+    saveButton = new QPushButton("Сохранить");
+    saveButton->setIcon(QIcon(":/images/icon-save.svg"));
+    saveButton->setIconSize(QSize(18, 18));
     saveButton->setMinimumHeight(40);
-    deleteButton = new QPushButton("🗑 Удалить аккаунт");
+    deleteButton = new QPushButton("Удалить аккаунт");
+    deleteButton->setIcon(QIcon(":/images/icon-trash.svg"));
+    deleteButton->setIconSize(QSize(18, 18));
     deleteButton->setMinimumHeight(40);
     deleteButton->setProperty("class", "danger-button");
     
-    refreshDataButton = new QPushButton("🔄 Обновить данные");
+    refreshDataButton = new QPushButton("Обновить данные");
+    refreshDataButton->setIcon(QIcon(":/images/icon-refresh.svg"));
+    refreshDataButton->setIconSize(QSize(18, 18));
     refreshDataButton->setMinimumHeight(40);
 
     saveStatusLabel = new QLabel();

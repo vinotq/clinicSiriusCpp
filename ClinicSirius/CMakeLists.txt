@@ -169,12 +169,12 @@ if(TARGET Qt${QT_VERSION_MAJOR}::Charts)
 endif()
 
 
-add_custom_command(TARGET ClinicSirius POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/../data
-    ${CMAKE_BINARY_DIR}/data
-    COMMENT "Copying data directory to build directory"
-)
+# add_custom_command(TARGET ClinicSirius POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#     ${CMAKE_SOURCE_DIR}/../data
+#     ${CMAKE_BINARY_DIR}/data
+#     COMMENT "Copying data directory to build directory"
+# )
 
 include(GNUInstallDirs)
 install(TARGETS ClinicSirius

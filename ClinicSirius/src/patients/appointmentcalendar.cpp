@@ -8,6 +8,7 @@
 #include <QStyleOption>
 #include <QPainter>
 #include <QStyle>
+#include <QIcon>
 
 // Кнопка для дня
 class DayButton : public QPushButton {
@@ -75,8 +76,9 @@ void AppointmentCalendar::setupUI() {
     
     QPushButton* prevBtn = new QPushButton();
     prevBtn->setMaximumWidth(40);
-    prevBtn->setText("⬅️");
+    prevBtn->setIcon(QIcon(":/images/icon-arrow-left.svg"));
     prevBtn->setIconSize(QSize(16,16));
+    prevBtn->setToolTip("Предыдущий месяц");
     connect(prevBtn, &QPushButton::clicked, this, &AppointmentCalendar::onPrevMonth);
     
     QLabel* monthLabel = new QLabel();
@@ -88,8 +90,11 @@ void AppointmentCalendar::setupUI() {
     monthFont.setBold(true);
     monthLabel->setFont(monthFont);
     
-    QPushButton* nextBtn = new QPushButton("➡️");
+    QPushButton* nextBtn = new QPushButton();
     nextBtn->setMaximumWidth(40);
+    nextBtn->setIcon(QIcon(":/images/icon-arrow-right.svg"));
+    nextBtn->setIconSize(QSize(16,16));
+    nextBtn->setToolTip("Следующий месяц");
     connect(nextBtn, &QPushButton::clicked, this, &AppointmentCalendar::onNextMonth);
     
     navLayout->addWidget(prevBtn);

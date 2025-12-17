@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 #include <QLabel>
+#include <QIcon>
 
 AddSlotDialog::AddSlotDialog(int doctorId, QWidget *parent)
     : QDialog(parent), doctorId(doctorId),
@@ -61,12 +62,18 @@ void AddSlotDialog::buildUI() {
     QHBoxLayout *durationLayout = new QHBoxLayout();
     durationLayout->addWidget(durationSpinBox);
     
-    preset30 = new QPushButton("⏱ 30 мин");
-    preset30->setMaximumWidth(70);
-    preset45 = new QPushButton("⏱ 45 мин");
-    preset45->setMaximumWidth(70);
-    preset60 = new QPushButton("⏱ 60 мин");
-    preset60->setMaximumWidth(70);
+    preset30 = new QPushButton("30 мин");
+    preset30->setIcon(QIcon(":/images/icon-clock.svg"));
+    preset30->setIconSize(QSize(14,14));
+    preset30->setMaximumWidth(90);
+    preset45 = new QPushButton("45 мин");
+    preset45->setIcon(QIcon(":/images/icon-clock.svg"));
+    preset45->setIconSize(QSize(14,14));
+    preset45->setMaximumWidth(90);
+    preset60 = new QPushButton("60 мин");
+    preset60->setIcon(QIcon(":/images/icon-clock.svg"));
+    preset60->setIconSize(QSize(14,14));
+    preset60->setMaximumWidth(90);
     
     durationLayout->addWidget(preset30);
     durationLayout->addWidget(preset45);
@@ -80,8 +87,12 @@ void AddSlotDialog::buildUI() {
     form->addRow("Длительность:", durationLayout);
     form->addRow("Кабинет:", roomCombo);
 
-    addButton = new QPushButton("➕ Добавить");
-    cancelButton = new QPushButton("❌ Отмена");
+    addButton = new QPushButton("Добавить");
+    addButton->setIcon(QIcon(":/images/icon-add.svg"));
+    addButton->setIconSize(QSize(16,16));
+    cancelButton = new QPushButton("Отмена");
+    cancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    cancelButton->setIconSize(QSize(16,16));
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(addButton);

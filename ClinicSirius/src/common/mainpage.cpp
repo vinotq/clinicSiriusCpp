@@ -18,9 +18,14 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QMenu>
+#include <QDialog>
+#include <QListWidget>
+#include <QDateTime>
+#include <QMessageBox>
 #include <QIcon>
 #include <QPixmap>
 #include <QSize>
+#include <algorithm>
 
 // ServiceCard implementation
 ServiceCard::ServiceCard(const QString& title, const QString& description,
@@ -32,24 +37,24 @@ ServiceCard::ServiceCard(const QString& title, const QString& description,
 
 void ServiceCard::setupUI(const QString& title, const QString& description, const QString& iconPath) {
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(20, 20, 20, 20);
-    layout->setSpacing(15);
+    layout->setContentsMargins(20, 18, 20, 18);
+    layout->setSpacing(18);
+    layout->setAlignment(Qt::AlignHCenter);
 
     QLabel *iconLabel = new QLabel();
     iconLabel->setProperty("class", "service-icon");
+    iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setFixedSize(64, 64);
+    iconLabel->setContentsMargins(0, 0, 0, 6);
     if (iconPath.startsWith(":/")) {
-        if (iconPath.endsWith(".svg", Qt::CaseInsensitive)) {
-            QPixmap pm = QIcon(iconPath).pixmap(QSize(36,36));
-            if (!pm.isNull()) iconLabel->setPixmap(pm);
-        } else {
-            QPixmap pix(iconPath);
-            if (!pix.isNull()) iconLabel->setPixmap(pix.scaledToHeight(36, Qt::SmoothTransformation));
+        QPixmap pm = QIcon(iconPath).pixmap(QSize(44, 44));
+        if (!pm.isNull()) {
+            iconLabel->setPixmap(pm);
         }
     } else if (!iconPath.isEmpty()) {
         iconLabel->setText(iconPath);
-        QFont iconFont; iconFont.setPointSize(36); iconLabel->setFont(iconFont);
+        QFont iconFont; iconFont.setPointSize(30); iconLabel->setFont(iconFont);
     }
-    iconLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(iconLabel);
 
     QLabel *titleLabel = new QLabel(title);
@@ -93,7 +98,9 @@ void MainPage::setupUI() {
     logoButton->setFlat(true);
     QIcon clinicIcon(":/images/clinic.svg");
     logoButton->setIcon(clinicIcon);
-    logoButton->setIconSize(QSize(48,48));
+    // Чёткий размер иконки, чтобы не плясала относительно текста
+    logoButton->setIconSize(QSize(32, 32));
+    logoButton->setMinimumHeight(48);
     logoButton->setText("Клиника «Сириус»");
     QFont logoFont; logoFont.setPointSize(16); logoButton->setFont(logoFont);
     logoButton->setProperty("class", "header-logo-btn");
@@ -203,12 +210,10 @@ void MainPage::buildHeader(QHBoxLayout *headerLayout) {
     userMenuButton->setProperty("class", "header-profile-btn");
 
     userMenu = new QMenu(userMenuButton);
-    profileAction = userMenu->addAction("Профиль");
-    settingsAction = userMenu->addAction("Настройки");
-    settingsAction->setText(QString::fromUtf8("⚙️ ") + settingsAction->text());
+    profileAction = userMenu->addAction(QIcon(":/images/icon-user.svg"), "Профиль");
+    settingsAction = userMenu->addAction(QIcon(":/images/icon-edit.svg"), "Настройки");
     userMenu->addSeparator();
-    logoutAction = userMenu->addAction("Выход");
-    logoutAction->setText(QString::fromUtf8("🚪 ") + logoutAction->text());
+    logoutAction = userMenu->addAction(QIcon(":/images/icon-close.svg"), "Выход");
 
     connect(profileAction, &QAction::triggered, this, [this]() { 
         if (currentUser.type == LoginUser::DOCTOR) {
@@ -254,7 +259,7 @@ void MainPage::buildLanding() {
     contentWidget->setProperty("class", "content-widget");
     QVBoxLayout *contentLayout = new QVBoxLayout(contentWidget);
     contentLayout->setContentsMargins(60, 30, 60, 30);
-    contentLayout->setSpacing(8);
+    contentLayout->setSpacing(12);
 
     QWidget *heroSection = new QWidget();
     heroSection->setProperty("class", "hero-section-widget");
@@ -279,23 +284,37 @@ void MainPage::buildLanding() {
     heroLayout->addWidget(descriptionLabel);
 
     QHBoxLayout *actionsLayout = new QHBoxLayout();
-    actionsLayout->setSpacing(15);
+    actionsLayout->setContentsMargins(0, 4, 0, 4);
+    actionsLayout->setSpacing(12);
 
-    QPushButton *profileActionButton = new QPushButton("👤 Личный кабинет");
+    QPushButton *profileActionButton = new QPushButton("Личный кабинет");
+    profileActionButton->setIcon(QIcon(":/images/icon-user.svg"));
+    profileActionButton->setIconSize(QSize(20, 20));
     profileActionButton->setMinimumHeight(45);
-    profileActionButton->setMinimumWidth(220);
+    profileActionButton->setMinimumWidth(200);
     profileActionButton->setProperty("class", "hero-profile-btn");
     connect(profileActionButton, &QPushButton::clicked, this, [this]() { showProfile(false); });
     actionsLayout->addWidget(profileActionButton);
 
-    QPushButton *bookingActionButton = new QPushButton("📅 Записать прием");
+    QPushButton *bookingActionButton = new QPushButton("Записаться на приём");
+    bookingActionButton->setIcon(QIcon(":/images/icon-calendar.svg"));
+    bookingActionButton->setIconSize(QSize(20, 20));
     bookingActionButton->setMinimumHeight(45);
-    bookingActionButton->setMinimumWidth(220);
+    bookingActionButton->setMinimumWidth(200);
     bookingActionButton->setProperty("class", "hero-booking-btn");
     connect(bookingActionButton, &QPushButton::clicked, this, &MainPage::navigateToBooking);
     actionsLayout->addWidget(bookingActionButton);
 
-    actionsLayout->addStretch();
+    QPushButton *upcomingButton = new QPushButton("Ближайшие приёмы");
+    upcomingButton->setIcon(QIcon(":/images/icon-upcoming.svg"));
+    upcomingButton->setIconSize(QSize(20, 20));
+    upcomingButton->setMinimumHeight(45);
+    upcomingButton->setMinimumWidth(200);
+    upcomingButton->setProperty("class", "hero-outline-btn");
+    connect(upcomingButton, &QPushButton::clicked, this, &MainPage::showUpcomingAppointments);
+    actionsLayout->addWidget(upcomingButton);
+
+    actionsLayout->addStretch(1);
     heroLayout->addLayout(actionsLayout);
     contentLayout->addWidget(heroSection);
     contentLayout->addSpacing(24);
@@ -309,27 +328,32 @@ void MainPage::buildLanding() {
     contentLayout->addWidget(servicesTitle);
 
     QGridLayout *servicesLayout = new QGridLayout();
-    servicesLayout->setSpacing(18);
+    servicesLayout->setHorizontalSpacing(32);
+    servicesLayout->setVerticalSpacing(18);
     servicesLayout->setContentsMargins(0, 0, 0, 0);
+    servicesLayout->setAlignment(Qt::AlignTop);
+    servicesLayout->setColumnStretch(0, 1);
+    servicesLayout->setColumnStretch(1, 1);
+    servicesLayout->setColumnStretch(2, 1);
 
     ServiceCard *onlineBookingCard = new ServiceCard(
         "Онлайн запись",
-        "Запишитесь на прием в врачу в удобное время прямо из личного кабинета",
-        ":/images/clinic.svg"
+        "Запишитесь на приём в удобное время прямо из личного кабинета.",
+        ":/images/icon-service-online.svg"
     );
     servicesLayout->addWidget(onlineBookingCard, 0, 0);
 
     ServiceCard *doctorsCard = new ServiceCard(
         "Квалифицированные врачи",
-        "Лучше специалисты различных направлений готовы помочь вам",
-        ":/images/doctor.svg"
+        "Опытные специалисты различных направлений готовы помочь вам.",
+        ":/images/icon-service-doctor.svg"
     );
     servicesLayout->addWidget(doctorsCard, 0, 1);
 
     ServiceCard *confidentialityCard = new ServiceCard(
         "Конфиденциальность",
-        "Все данные пациентов защищены и хранятся в безопасности",
-        ":/images/clinic.svg"
+        "Данные пациентов защищены и безопасно хранятся в системе.",
+        ":/images/icon-service-shield.svg"
     );
     servicesLayout->addWidget(confidentialityCard, 0, 2);
 
@@ -346,21 +370,36 @@ void MainPage::buildLanding() {
 
     QGridLayout *featuresLayout = new QGridLayout();
     featuresLayout->setSpacing(15);
+    featuresLayout->setAlignment(Qt::AlignTop);
     featuresLayout->setContentsMargins(0, 0, 0, 0);
 
     QStringList features = {
-        "Удобное расписание — возможность выбрать удобное время приема",
-        "Быстрое обслуживание — современное оборудование и опытный персонал",
-        "Семейные услуги — прием для всех членов семьи",
-        "Справки и документы — оформление необходимых документов"
+        "Удобное расписание — выберите время приёма под свой график.",
+        "Быстрое обслуживание — современное оборудование и опытная команда.",
+        "Семейные услуги — приём и сопровождение всех членов семьи.",
+        "Справки и документы — оформление и выдача нужных документов."
     };
 
     int row = 0, col = 0;
     for (const QString& feature : features) {
+        QWidget *featureRow = new QWidget();
+        QHBoxLayout *rowLayout = new QHBoxLayout(featureRow);
+        rowLayout->setContentsMargins(0, 0, 0, 0);
+        rowLayout->setSpacing(10);
+
+        QLabel *dot = new QLabel();
+        dot->setFixedSize(14, 14);
+        dot->setProperty("class", "feature-dot");
+
         QLabel *featureLabel = new QLabel(feature);
         featureLabel->setWordWrap(true);
         featureLabel->setProperty("class", "feature-label");
-        featuresLayout->addWidget(featureLabel, row, col);
+
+        rowLayout->addWidget(dot, 0, Qt::AlignTop);
+        rowLayout->addWidget(featureLabel);
+        rowLayout->addStretch();
+
+        featuresLayout->addWidget(featureRow, row, col);
 
         col++;
         if (col == 2) {
@@ -424,11 +463,13 @@ void MainPage::buildLanding() {
 
     QHBoxLayout *contactsLayout = new QHBoxLayout();
     contactsLayout->setSpacing(30);
+    contactsLayout->setAlignment(Qt::AlignTop);
 
     QVBoxLayout *phoneLayout = new QVBoxLayout();
-    QLabel *phoneIconLabel = new QLabel("📞");
-    QFont pi; pi.setPointSize(20); phoneIconLabel->setFont(pi);
+    QLabel *phoneIconLabel = new QLabel();
+    phoneIconLabel->setPixmap(QIcon(":/images/icon-phone.svg").pixmap(QSize(28, 28)));
     phoneIconLabel->setAlignment(Qt::AlignCenter);
+    phoneIconLabel->setProperty("class", "contact-icon");
     phoneLayout->addWidget(phoneIconLabel);
 
     QLabel *phoneLabel = new QLabel("Телефон");
@@ -449,9 +490,10 @@ void MainPage::buildLanding() {
     phoneLayout->addWidget(phoneNumberLabel);
 
     QVBoxLayout *addressLayout = new QVBoxLayout();
-    QLabel *addressIconLabel = new QLabel("📍");
-    QFont ai; ai.setPointSize(20); addressIconLabel->setFont(ai);
+    QLabel *addressIconLabel = new QLabel();
+    addressIconLabel->setPixmap(QIcon(":/images/icon-pin.svg").pixmap(QSize(28, 28)));
     addressIconLabel->setAlignment(Qt::AlignCenter);
+    addressIconLabel->setProperty("class", "contact-icon");
     addressLayout->addWidget(addressIconLabel);
 
     QLabel *addressLabel = new QLabel("Адрес");
@@ -472,9 +514,10 @@ void MainPage::buildLanding() {
     addressLayout->addWidget(addressValueLabel);
 
     QVBoxLayout *hoursLayout = new QVBoxLayout();
-    QLabel *hoursIconLabel = new QLabel("⏰");
-    QFont hi; hi.setPointSize(20); hoursIconLabel->setFont(hi);
+    QLabel *hoursIconLabel = new QLabel();
+    hoursIconLabel->setPixmap(QIcon(":/images/icon-clock.svg").pixmap(QSize(28, 28)));
     hoursIconLabel->setAlignment(Qt::AlignCenter);
+    hoursIconLabel->setProperty("class", "contact-icon");
     hoursLayout->addWidget(hoursIconLabel);
 
     QLabel *hoursLabel = new QLabel("Часы работы");
@@ -552,7 +595,9 @@ void MainPage::buildDoctorLanding() {
     QHBoxLayout *actionsLayout = new QHBoxLayout();
     actionsLayout->setSpacing(15);
 
-    QPushButton *scheduleButton = new QPushButton("📄 Расписание");
+    QPushButton *scheduleButton = new QPushButton("Расписание");
+    scheduleButton->setIcon(QIcon(":/images/icon-calendar.svg"));
+    scheduleButton->setIconSize(QSize(18, 18));
     scheduleButton->setMinimumHeight(45);
     scheduleButton->setMinimumWidth(220);
     scheduleButton->setProperty("class", "hero-booking-btn");
@@ -561,7 +606,9 @@ void MainPage::buildDoctorLanding() {
     });
     actionsLayout->addWidget(scheduleButton);
 
-    QPushButton *historyButton = new QPushButton("📁 История приёмов пациента");
+    QPushButton *historyButton = new QPushButton("История приёмов пациента");
+    historyButton->setIcon(QIcon(":/images/icon-upcoming.svg"));
+    historyButton->setIconSize(QSize(18, 18));
     historyButton->setMinimumHeight(45);
     historyButton->setMinimumWidth(220);
     historyButton->setProperty("class", "hero-history-btn");
@@ -633,4 +680,136 @@ void MainPage::showHome() {
 
 void MainPage::showBooking() {
     contentStack->setCurrentWidget(appointmentBookingWidget);
+}
+
+void MainPage::showUpcomingAppointments() {
+    if (currentUser.type != LoginUser::PATIENT) {
+        QMessageBox::information(this, "Ближайшие приёмы",
+                                 "Список ближайших приёмов доступен только пациентам.");
+        return;
+    }
+
+    DataManager dataManager;
+    QList<Appointment> appointments = dataManager.getPatientAppointments(currentUser.id);
+    QList<Appointment> upcoming;
+    QDateTime now = QDateTime::currentDateTime();
+
+    for (const auto &ap : appointments) {
+        if (ap.date.isValid() && ap.date >= now) {
+            upcoming.append(ap);
+        }
+    }
+
+    std::sort(upcoming.begin(), upcoming.end(), [](const Appointment &a, const Appointment &b) {
+        return a.date < b.date;
+    });
+
+    QDialog *dialog = new QDialog(this);
+    dialog->setWindowTitle("Ближайшие приёмы");
+    dialog->setModal(true);
+    dialog->setMinimumWidth(460);
+
+    QVBoxLayout *layout = new QVBoxLayout(dialog);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(12);
+
+    QLabel *title = new QLabel("Ближайшие приёмы");
+    title->setProperty("class", "dialog-title");
+    layout->addWidget(title);
+
+    QListWidget *list = new QListWidget();
+    list->setProperty("class", "upcoming-list");
+    list->setSpacing(6);
+    list->setUniformItemSizes(true);
+    layout->addWidget(list);
+
+    if (upcoming.isEmpty()) {
+        list->addItem("У вас пока нет запланированных приёмов.");
+    } else {
+        for (const auto &ap : upcoming) {
+            Doctor d = dataManager.getDoctorById(ap.id_doctor);
+            Specialization spec = dataManager.getSpecializationById(d.id_spec);
+            QString specName = spec.name.isEmpty() ? "врач" : spec.name;
+            QString line = QString("%1 — %2 %3 (%4)")
+                               .arg(ap.date.toString("dd.MM.yyyy HH:mm"),
+                                    d.fname,
+                                    d.lname,
+                                    specName);
+            QListWidgetItem *item = new QListWidgetItem(line);
+            item->setData(Qt::UserRole, ap.id_ap);
+            list->addItem(item);
+        }
+    }
+
+    QHBoxLayout *buttons = new QHBoxLayout();
+    buttons->addStretch();
+
+    QPushButton *bookBtn = new QPushButton("Записаться");
+    bookBtn->setIcon(QIcon(":/images/icon-calendar.svg"));
+    bookBtn->setIconSize(QSize(18, 18));
+    bookBtn->setProperty("class", "hero-booking-btn");
+
+    QPushButton *cancelBtn = new QPushButton("Отменить приём");
+    cancelBtn->setIcon(QIcon(":/images/icon-close.svg"));
+    cancelBtn->setIconSize(QSize(16, 16));
+    cancelBtn->setProperty("class", "hero-outline-btn");
+
+    QPushButton *closeBtn = new QPushButton("Закрыть");
+    closeBtn->setIcon(QIcon(":/images/icon-close.svg"));
+    closeBtn->setIconSize(QSize(16, 16));
+    closeBtn->setProperty("class", "hero-outline-btn");
+
+    buttons->addWidget(bookBtn);
+    buttons->addWidget(cancelBtn);
+    buttons->addWidget(closeBtn);
+    layout->addLayout(buttons);
+
+    connect(closeBtn, &QPushButton::clicked, dialog, &QDialog::close);
+    connect(bookBtn, &QPushButton::clicked, this, [this, dialog]() {
+        dialog->close();
+        emit navigateToBooking();
+    });
+
+    connect(cancelBtn, &QPushButton::clicked, this, [this, list]() {
+        auto item = list->currentItem();
+        if (!item) {
+            QMessageBox::information(this, "Отмена приёма", "Выберите приём для отмены.");
+            return;
+        }
+        int apId = item->data(Qt::UserRole).toInt();
+        if (apId <= 0) return;
+
+        DataManager dm;
+        Appointment ap = dm.getAppointmentById(apId);
+        if (ap.id_ap <= 0) {
+            QMessageBox::warning(this, "Отмена приёма", "Приём не найден.");
+            return;
+        }
+
+        QDateTime now = QDateTime::currentDateTime();
+        if (ap.date < now.addSecs(7200)) { // 2 часа
+            QMessageBox::warning(this, "Отмена приёма",
+                                 "Отменить можно только если до приёма больше 2 часов.");
+            return;
+        }
+
+        if (QMessageBox::question(this, "Отмена приёма",
+                                  QString("Отменить приём %1?").arg(ap.date.toString("dd.MM.yyyy HH:mm")))
+            == QMessageBox::Yes) {
+            dm.deleteAppointment(ap.id_ap);
+            // Освобождаем слот
+            if (ap.id_ap_sch > 0) {
+                AppointmentSchedule sch = dm.getScheduleById(ap.id_ap_sch);
+                if (sch.id_ap_sch > 0) {
+                    sch.status = "free";
+                    dm.updateSchedule(sch);
+                }
+            }
+            delete list->takeItem(list->row(item));
+            QMessageBox::information(this, "Отмена приёма", "Приём отменён.");
+        }
+    });
+
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->show();
 }

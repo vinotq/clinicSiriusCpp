@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QCompleter>
 #include <QStringListModel>
+#include <QIcon>
 
 DoctorVisitDialog::DoctorVisitDialog(int doctorId_, int scheduleId_, int mode_, QWidget *parent)
     : QDialog(parent), doctorId(doctorId_), scheduleId(scheduleId_), mode(mode_),
@@ -37,7 +38,6 @@ void DoctorVisitDialog::buildVisitUI() {
     diagnosisCombo = new QComboBox();
     complaintsEdit = new QTextEdit();
     recommendationsEdit = new QTextEdit();
-    notesEdit = new QTextEdit();
 
     // Patient selector (non-editable here; booking uses searchable control)
     patientCombo->setEditable(false);
@@ -46,7 +46,6 @@ void DoctorVisitDialog::buildVisitUI() {
     form->addRow("Диагноз:", diagnosisCombo);
     form->addRow("Жалобы:", complaintsEdit);
     form->addRow("Рекомендации:", recommendationsEdit);
-    form->addRow("Примечания:", notesEdit);
 
     // Populate diagnoses
     diagnosisCombo->clear();
@@ -67,19 +66,27 @@ void DoctorVisitDialog::buildVisitUI() {
         }
     }
 
-    saveButton = new QPushButton("📅 Записать на прием");
-    finishButton = new QPushButton("✅ Завершить прием");
+    saveButton = new QPushButton("Записать на прием");
+    saveButton->setIcon(QIcon(":/images/icon-calendar.svg"));
+    saveButton->setIconSize(QSize(16,16));
+    finishButton = new QPushButton("Завершить прием");
+    finishButton->setIcon(QIcon(":/images/icon-check.svg"));
+    finishButton->setIconSize(QSize(16,16));
+    repeatBookButton = new QPushButton("Записать повторно");
+    repeatBookButton->setIcon(QIcon(":/images/icon-refresh.svg"));
+    repeatBookButton->setIconSize(QSize(16,16));
 
     QHBoxLayout *actions = new QHBoxLayout();
-    actions->addWidget(saveButton);
+    // Убрали прямую запись; оставили только повторную (менеджерский сценарий)
+    actions->addWidget(repeatBookButton);
     actions->addStretch();
     actions->addWidget(finishButton);
 
     main->addLayout(form);
     main->addLayout(actions);
 
-    connect(saveButton, &QPushButton::clicked, this, &DoctorVisitDialog::onSaveAppointment);
     connect(finishButton, &QPushButton::clicked, this, &DoctorVisitDialog::onFinishVisit);
+    connect(repeatBookButton, &QPushButton::clicked, this, &DoctorVisitDialog::onRepeatBooking);
 }
 
 void DoctorVisitDialog::buildBookingUI() {
@@ -136,8 +143,12 @@ void DoctorVisitDialog::buildBookingUI() {
                 this, &DoctorVisitDialog::loadSchedulesForSelectedDoctor);
     }
     
-    bookButton = new QPushButton("✅ Записать");
-    cancelBookingButton = new QPushButton("❌ Отменить запись");
+    bookButton = new QPushButton("Записать");
+    bookButton->setIcon(QIcon(":/images/icon-check.svg"));
+    bookButton->setIconSize(QSize(16,16));
+    cancelBookingButton = new QPushButton("Отменить запись");
+    cancelBookingButton->setIcon(QIcon(":/images/icon-close.svg"));
+    cancelBookingButton->setIconSize(QSize(16,16));
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(bookButton);
@@ -160,6 +171,24 @@ void DoctorVisitDialog::loadPatients() {
             for (const Patient &p : pats) {
                 patientCombo->addItem(p.fullName(), p.id_patient);
             }
+
+            // Если пришли из расписания с уже занятого слота — выбрать пациента автоматически
+            if (scheduleId >= 0) {
+                QList<Appointment> appts = dataManager.getAppointmentsByDoctor(doctorId);
+                for (const Appointment &a : appts) {
+                    if (a.id_ap_sch == scheduleId) {
+                        int idx = patientCombo->findData(a.id_patient);
+                        if (idx >= 0) {
+                            patientCombo->setCurrentIndex(idx);
+                            patientCombo->setEnabled(false); // пациент фиксирован для этого слота
+                        }
+                        currentAppointmentId = a.id_ap;
+                        break;
+                    }
+                }
+            } else {
+                patientCombo->setCurrentIndex(-1); // не выбирать по умолчанию
+            }
         }
     } else {
         // Режим записи - заполняем patientComboBooking
@@ -180,6 +209,7 @@ void DoctorVisitDialog::loadPatients() {
                 completer->setCaseSensitivity(Qt::CaseInsensitive);
                 patientComboBooking->setCompleter(completer);
             }
+            patientComboBooking->setCurrentIndex(-1); // не выбирать по умолчанию
         }
     }
 }
@@ -224,6 +254,16 @@ void DoctorVisitDialog::setCurrentPatient(int patientId) {
     if (mode == 0 && patientCombo) {
         int idx = patientCombo->findData(patientId);
         if (idx >= 0) patientCombo->setCurrentIndex(idx);
+    }
+}
+
+void DoctorVisitDialog::setBookingPatient(int patientId, bool lock) {
+    if (mode == 1 && patientComboBooking) {
+        int idx = patientComboBooking->findData(patientId);
+        if (idx >= 0) {
+            patientComboBooking->setCurrentIndex(idx);
+            if (lock) patientComboBooking->setEnabled(false);
+        }
     }
 }
 
@@ -325,15 +365,57 @@ void DoctorVisitDialog::onSaveAppointment() {
         return;
     }
 
+    // Проверки слота и существующей записи
+    int existingApptId = -1;
+    Appointment existingAppt;
+    if (scheduleIdUsed > 0) {
+        AppointmentSchedule sch = dataManager.getScheduleById(scheduleIdUsed);
+        if (!sch.time_from.isValid()) {
+            QMessageBox::warning(this, "Ошибка", "Не удалось загрузить слот расписания.");
+            return;
+        }
+        if (sch.time_from < QDateTime::currentDateTime()) {
+            QMessageBox::warning(this, "Ошибка", "Нельзя записать на прошедший слот.");
+            return;
+        }
+        // Найти существующую запись для этого слота
+        QList<Appointment> appts = dataManager.getAppointmentsByDoctor(doctorIdForBooking);
+        for (const Appointment &a : appts) {
+            if (a.id_ap_sch == scheduleIdUsed) {
+                existingApptId = a.id_ap;
+                existingAppt = a;
+                break;
+            }
+        }
+        QString st = sch.status.trimmed().toLower();
+        // Разрешаем, если есть существующий приём (обновление), иначе блокируем занятые/завершённые
+        if (existingApptId < 0 && (st == "booked" || st == "busy" || st == "done")) {
+            QMessageBox::warning(this, "Слот занят", "Этот слот уже занят или завершён.");
+            return;
+        }
+    }
+
     Appointment ap;
-    ap.id_ap = dataManager.getNextAppointmentId();
-    ap.id_doctor = doctorIdForBooking;
-    ap.id_patient = patientId;
+    bool isUpdate = false;
+    if (existingApptId > 0) {
+        ap = existingAppt;
+        ap.id_patient = patientId;
+        ap.completed = false;
+        isUpdate = true;
+    } else {
+        ap.id_ap = dataManager.getNextAppointmentId();
+        ap.id_doctor = doctorIdForBooking;
+        ap.id_patient = patientId;
+        ap.completed = false;
+    }
     ap.date = appointmentTime;
     ap.id_ap_sch = scheduleIdUsed;  // Привязать встречу к расписанию
-    ap.completed = false;
 
-    dataManager.addAppointment(ap);
+    if (isUpdate) {
+        dataManager.updateAppointment(ap);
+    } else {
+        dataManager.addAppointment(ap);
+    }
     
     // Установить статус "занято" для использованного слота расписания
     if (scheduleIdUsed > 0) {
@@ -344,13 +426,10 @@ void DoctorVisitDialog::onSaveAppointment() {
         }
     }
     
-    if (mode == 0) {
-        QMessageBox::information(this, "Готово", "Пациент записан на прием");
-        emit appointmentSaved();
-    } else {
-        QMessageBox::information(this, "Готово", "Пациент успешно записан");
-        emit appointmentSaved();
-    }
+    QString msg = (mode == 0 ? "Пациент записан на прием" : "Пациент успешно записан");
+    if (isUpdate) msg = "Запись обновлена";
+    QMessageBox::information(this, "Готово", msg);
+    emit appointmentSaved();
     
     accept();
 }
@@ -400,9 +479,13 @@ void DoctorVisitDialog::onFinishVisit() {
             dataManager.addRecipe(r);
         }
 
-        // После завершения приема удалить использованный слот расписания
+        // После завершения приема помечаем слот как завершённый, но не удаляем
         if (ap.id_ap_sch > 0) {
-            dataManager.deleteSchedule(ap.id_ap_sch);
+            AppointmentSchedule sch = dataManager.getScheduleById(ap.id_ap_sch);
+            if (sch.id_ap_sch > 0) {
+                sch.status = "done";
+                dataManager.updateSchedule(sch);
+            }
         }
     }
     
@@ -442,4 +525,20 @@ void DoctorVisitDialog::onCancelBooking() {
     QMessageBox::information(this, "Готово", "Запись отменена");
     emit appointmentSaved(); // Refresh parent view
     reject();
+}
+
+void DoctorVisitDialog::onRepeatBooking() {
+    if (!patientCombo) return;
+    int patientId = patientCombo->currentData().toInt();
+    if (patientId <= 0) {
+        QMessageBox::warning(this, "Ошибка", "Выберите пациента, чтобы записать повторно.");
+        return;
+    }
+
+    // Менеджерский сценарий: выбрать любого врача и любое доступное окно
+    DoctorVisitDialog bookingDlg(doctorId, -1, 1, this);
+    bookingDlg.setBookingPatient(patientId, true); // фиксируем пациента
+    if (bookingDlg.exec() == QDialog::Accepted) {
+        emit appointmentSaved();
+    }
 }

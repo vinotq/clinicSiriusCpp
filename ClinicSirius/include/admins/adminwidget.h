@@ -41,6 +41,23 @@ private slots:
     void onDoctorsFilterChanged(const QString &text);
     void onPatientsFilterChanged(const QString &text);
     void onManagersFilterChanged(const QString &text);
+    
+    // Directories
+    void loadSpecializations();
+    void loadRooms();
+    void loadDiagnoses();
+    void onAddSpecialization();
+    void onEditSpecialization();
+    void onDeleteSpecialization();
+    void onAddRoom();
+    void onEditRoom();
+    void onDeleteRoom();
+    void onAddDiagnosis();
+    void onEditDiagnosis();
+    void onDeleteDiagnosis();
+    void onSpecializationsFilterChanged(const QString &text);
+    void onRoomsFilterChanged(const QString &text);
+    void onDiagnosesFilterChanged(const QString &text);
 
 private:
     void buildUI();
@@ -76,6 +93,27 @@ private:
     // Statistics tab
     QWidget *statisticsTab;
     class StatisticsWidget *statisticsWidget;
+    
+    // Directories tab
+    QWidget *directoriesTab;
+    // Specializations
+    QLineEdit *specsSearchEdit;
+    QTableWidget *specsTable;
+    QPushButton *addSpecBtn;
+    QPushButton *editSpecBtn;
+    QPushButton *deleteSpecBtn;
+    // Rooms
+    QLineEdit *roomsSearchEdit;
+    QTableWidget *roomsTable;
+    QPushButton *addRoomBtn;
+    QPushButton *editRoomBtn;
+    QPushButton *deleteRoomBtn;
+    // Diagnoses
+    QLineEdit *diagSearchEdit;
+    QTableWidget *diagTable;
+    QPushButton *addDiagBtn;
+    QPushButton *editDiagBtn;
+    QPushButton *deleteDiagBtn;
 
     LoginUser currentUser;
     DataManager *dataManager;
@@ -84,6 +122,9 @@ private:
     QList<Doctor> allDoctors;
     QList<Patient> allPatients;
     QList<Manager> allManagers;
+    QList<Specialization> allSpecializations;
+    QList<Room> allRooms;
+    QList<Diagnosis> allDiagnoses;
 };
 
 #endif // ADMINWIDGET_H

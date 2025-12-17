@@ -32,10 +32,16 @@ void LoginWindow::setupUI() {
 
     QHBoxLayout *logoLayout = new QHBoxLayout();
     logoLayout->setAlignment(Qt::AlignCenter);
-    QLabel *logoIcon = new QLabel("🏥");
+    QLabel *logoIcon = new QLabel();
     logoIcon->setProperty("class", "header-logo-icon");
-    QFont lic; lic.setPointSize(400); logoIcon->setFont(lic);
-    logoIcon->setContentsMargins(0,0,8,0);
+    QPixmap clinicPix(":/images/clinic.svg");
+    if (!clinicPix.isNull()) {
+        logoIcon->setPixmap(clinicPix.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    } else {
+        logoIcon->setText("CS");
+        QFont lic; lic.setPointSize(32); lic.setBold(true); logoIcon->setFont(lic);
+    }
+    logoIcon->setContentsMargins(0,0,12,0);
     QLabel *logoText = new QLabel("Клиника «Сириус»");
     QFont logoFont;
     logoFont.setPointSize(24);
@@ -84,10 +90,13 @@ void LoginWindow::setupUI() {
     passwordInput->setMinimumHeight(40);
     passwordLayout->addWidget(passwordInput);
 
-    passwordToggleButton = new QPushButton("👁️");
-    passwordToggleButton->setMaximumWidth(45);
+    passwordToggleButton = new QPushButton();
+    passwordToggleButton->setCheckable(true);
+    passwordToggleButton->setMaximumWidth(40);
     passwordToggleButton->setMinimumHeight(40);
-    passwordToggleButton->setProperty("class", "emoji-button");
+    passwordToggleButton->setIcon(QIcon(":/images/icon-eye.svg"));
+    passwordToggleButton->setIconSize(QSize(16,16));
+    passwordToggleButton->setProperty("class", "icon-button accent-icon");
     connect(passwordToggleButton, &QPushButton::clicked, this, &LoginWindow::onPasswordToggle);
     passwordLayout->addWidget(passwordToggleButton);
 
@@ -95,15 +104,25 @@ void LoginWindow::setupUI() {
 
     mainLayout->addSpacing(10);
 
-    QPushButton *forgotButton = new QPushButton("🔑 Забыли пароль?");
+    QPushButton *forgotButton = new QPushButton("Забыли пароль?");
     forgotButton->setToolTip("Напомнить пароль");
     forgotButton->setFlat(true);
-    forgotButton->setProperty("class", "login-forgot");
+    forgotButton->setProperty("class", "login-forgot accent-icon");
+    connect(forgotButton, &QPushButton::clicked, this, [this]() {
+        QMessageBox::information(
+            this,
+            "Восстановление доступа",
+            "Для восстановления доступа обратитесь к администратору клиники "
+            "или менеджеру. Временно поддерживается только ручной сброс пароля."
+        );
+    });
     mainLayout->addWidget(forgotButton, 0, Qt::AlignRight);
 
     mainLayout->addSpacing(10);
 
-    loginButton = new QPushButton("🔐 Войти");
+    loginButton = new QPushButton("Войти");
+    loginButton->setIcon(QIcon(":/images/icon-lock.svg"));
+    loginButton->setIconSize(QSize(18,18));
     loginButton->setMinimumHeight(45);
     loginButton->setFont(QFont("Arial", 12, QFont::Bold));
     connect(loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
@@ -116,7 +135,9 @@ void LoginWindow::setupUI() {
 
     QHBoxLayout *registrationLayout = new QHBoxLayout();
     QLabel *noAccountLabel = new QLabel("Нет аккаунта?");
-    registrationButton = new QPushButton("📝 Зарегистрироваться");
+    registrationButton = new QPushButton("Зарегистрироваться");
+    registrationButton->setIcon(QIcon(":/images/icon-add.svg"));
+    registrationButton->setIconSize(QSize(18,18));
     registrationButton->setFlat(true);
     registrationButton->setProperty("class", "login-forgot");
     connect(registrationButton, &QPushButton::clicked, this, &LoginWindow::onRegistrationClicked);
@@ -133,7 +154,7 @@ void LoginWindow::setupUI() {
     testLayout->setContentsMargins(20, 20, 20, 20);
     testLayout->setSpacing(8);
 
-    QLabel *testTitle = new QLabel("ℹ️ Тестовые пользователи");
+    QLabel *testTitle = new QLabel("Тестовые пользователи");
     QFont testTitleFont;
     testTitleFont.setPointSize(11);
     testTitleFont.setBold(true);
@@ -157,7 +178,9 @@ void LoginWindow::setupUI() {
 
     QHBoxLayout *copyLayout = new QHBoxLayout();
     copyLayout->addStretch();
-    copyUsersButton = new QPushButton("📋 Скопировать данные");
+    copyUsersButton = new QPushButton("Скопировать данные");
+    copyUsersButton->setIcon(QIcon(":/images/icon-save.svg"));
+    copyUsersButton->setIconSize(QSize(16,16));
     copyUsersButton->setProperty("class", "secondary");
     copyUsersButton->setMinimumHeight(32);
     connect(copyUsersButton, &QPushButton::clicked, this, &LoginWindow::copyTestUsersToClipboard);
@@ -261,17 +284,14 @@ void LoginWindow::onRegistrationClicked() {
 }
 
 void LoginWindow::onPasswordToggle() {
-    if (passwordInput->echoMode() == QLineEdit::Password) {
-        passwordInput->setEchoMode(QLineEdit::Normal);
-        passwordToggleButton->setText("🙈");
-    } else {
-        passwordInput->setEchoMode(QLineEdit::Password);
-        passwordToggleButton->setText("👁️");
-    }
+    bool show = passwordInput->echoMode() == QLineEdit::Password;
+    passwordInput->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+    passwordToggleButton->setIcon(QIcon(show ? ":/images/icon-eye-off.svg" : ":/images/icon-eye.svg"));
+    passwordToggleButton->setChecked(show);
 }
 
 void LoginWindow::showError(const QString& message) {
-    errorLabel->setText("⚠️ " + message);
+    errorLabel->setText(message);
     errorLabel->setProperty("class", "error-label");
     errorLabel->style()->unpolish(errorLabel);
     errorLabel->style()->polish(errorLabel);

@@ -3,6 +3,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QIcon>
+#include <QSize>
 #include <algorithm>
 
 PatientSelectionDialog::PatientSelectionDialog(QWidget *parent, const QList<Patient> &availablePatients)
@@ -52,11 +54,19 @@ void PatientSelectionDialog::buildUI() {
 
     QHBoxLayout *btnLay = new QHBoxLayout();
 
-    m_createBtn = new QPushButton("➕ Создать нового");
-    m_selfBtn = new QPushButton("👤 Выбрать себя");
-    m_selectBtn = new QPushButton("✅ Выбрать");
+    m_createBtn = new QPushButton("Создать нового");
+    m_createBtn->setIcon(QIcon(":/images/icon-add.svg"));
+    m_createBtn->setIconSize(QSize(16, 16));
+    m_selfBtn = new QPushButton("Выбрать себя");
+    m_selfBtn->setIcon(QIcon(":/images/icon-user.svg"));
+    m_selfBtn->setIconSize(QSize(16, 16));
+    m_selectBtn = new QPushButton("Выбрать");
+    m_selectBtn->setIcon(QIcon(":/images/icon-check.svg"));
+    m_selectBtn->setIconSize(QSize(16, 16));
     m_selectBtn->setEnabled(false);
-    m_cancelBtn = new QPushButton("❌ Отмена");
+    m_cancelBtn = new QPushButton("Отмена");
+    m_cancelBtn->setIcon(QIcon(":/images/icon-close.svg"));
+    m_cancelBtn->setIconSize(QSize(16, 16));
 
     btnLay->addWidget(m_createBtn);
     btnLay->addWidget(m_selfBtn);

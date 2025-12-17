@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QLabel>
+#include <QIcon>
 
 AdminProfileWidget::AdminProfileWidget(QWidget *parent)
     : QWidget(parent), m_dataManager(QString()) {
@@ -76,8 +77,12 @@ void AdminProfileWidget::buildUI() {
 
     // Buttons
     QHBoxLayout* buttonLayout = new QHBoxLayout();
-    m_saveBtn = new QPushButton("💾 Сохранить");
-    m_logoutBtn = new QPushButton("🚪 Выход");
+    m_saveBtn = new QPushButton("Сохранить");
+    m_saveBtn->setIcon(QIcon(":/images/icon-save.svg"));
+    m_saveBtn->setIconSize(QSize(16,16));
+    m_logoutBtn = new QPushButton("Выход");
+    m_logoutBtn->setIcon(QIcon(":/images/icon-unlock.svg"));
+    m_logoutBtn->setIconSize(QSize(16,16));
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_saveBtn);
     buttonLayout->addWidget(m_logoutBtn);

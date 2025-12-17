@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QPixmap>
 
 InfoCard::InfoCard(const QString &title, const QString &description,
                   const QString &iconPath, QWidget *parent)
@@ -58,24 +59,33 @@ void InfoCard::setDescription(const QString &description) {
 }
 
 void InfoCard::setIcon(const QString &iconPath) {
-    // Replace image icons with emoji equivalents. Map common icon names
-    // to emoji and set as label text. This avoids loading image resources.
+    QString resolved = iconPath;
     QString key = iconPath.toLower();
-    QString emoji = "🔹";
-    if (key.contains("clinic") || key.contains("sirius")) emoji = "🏥";
-    else if (key.contains("doctor") || key.contains("medical")) emoji = QString::fromUtf8("👩\u200D⚕️");
-    else if (key.contains("check")) emoji = "✅";
-    else if (key.contains("cancel") || key.contains("delete")) emoji = "🗑";
-    else if (key.contains("eye-off")) emoji = "🙈";
-    else if (key.contains("eye") || key.contains("visibility")) emoji = "👁️";
-    else if (key.contains("profile") || key.contains("account")) emoji = "👤";
-    else if (key.contains("location")) emoji = "📍";
-    else if (key.contains("phone") || key.contains("call")) emoji = "📞";
-    else if (key.contains("history") || key.contains("autorenew")) emoji = "🕘";
-    else if (key.contains("clock") || key.contains("schedule")) emoji = "⏰";
 
-    iconLabel->setText(emoji);
-    QFont f = iconLabel->font();
-    f.setPointSize(24);
-    iconLabel->setFont(f);
+    if (resolved.isEmpty()) {
+        resolved = ":/images/icon-info.svg";
+    }
+
+    if (!resolved.startsWith(":/")) {
+        if (key.contains("clinic") || key.contains("sirius")) resolved = ":/images/clinic.svg";
+        else if (key.contains("doctor") || key.contains("medical")) resolved = ":/images/icon-service-doctor.svg";
+        else if (key.contains("check")) resolved = ":/images/icon-check.svg";
+        else if (key.contains("cancel") || key.contains("delete")) resolved = ":/images/icon-trash.svg";
+        else if (key.contains("eye-off")) resolved = ":/images/icon-eye-off.svg";
+        else if (key.contains("eye") || key.contains("visibility")) resolved = ":/images/icon-eye.svg";
+        else if (key.contains("profile") || key.contains("account")) resolved = ":/images/icon-user.svg";
+        else if (key.contains("location")) resolved = ":/images/icon-pin.svg";
+        else if (key.contains("phone") || key.contains("call")) resolved = ":/images/icon-phone.svg";
+        else if (key.contains("history") || key.contains("autorenew")) resolved = ":/images/icon-refresh.svg";
+        else if (key.contains("clock") || key.contains("schedule")) resolved = ":/images/icon-clock.svg";
+        else resolved = ":/images/icon-info.svg";
+    }
+
+    QPixmap pm(resolved);
+    if (!pm.isNull()) {
+        iconLabel->setPixmap(pm.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        iconLabel->setText("");
+    } else {
+        iconLabel->clear();
+    }
 }

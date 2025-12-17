@@ -10,6 +10,8 @@
 #include <QDialog>
 #include <QFormLayout>
 #include <QLabel>
+#include <QIcon>
+#include <QSize>
 #include <algorithm>
 
 FamilyViewerWidget::FamilyViewerWidget(QWidget *parent)
@@ -26,11 +28,18 @@ void FamilyViewerWidget::buildUI()
     resize(700, 600);
 
     QVBoxLayout *main = new QVBoxLayout(this);
+    main->setContentsMargins(12, 12, 12, 12);
+    main->setSpacing(14);
 
     /* ================== ВЫБОР ПАЦИЕНТА ================== */
 
-    QGroupBox *patientGroup = new QGroupBox("Выбор пациента для управления семьей");
+    QGroupBox *patientGroup = new QGroupBox("Выбор пациента");
+    patientGroup->setStyleSheet(
+        "QGroupBox { margin-top: 6px; padding-top: 14px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }");
     QVBoxLayout *patientLayout = new QVBoxLayout(patientGroup);
+    patientLayout->setContentsMargins(10, 8, 10, 8);
+    patientLayout->setSpacing(10);
 
     QHBoxLayout *searchLayout = new QHBoxLayout();
     QLabel *searchLabel = new QLabel("Поиск пациента:");
@@ -51,26 +60,35 @@ void FamilyViewerWidget::buildUI()
     comboLayout->addWidget(m_patientComboBox);
     patientLayout->addLayout(comboLayout);
 
-    m_patientInfoLabel = new QLabel("Выберите пациента для управления его семьей");
+    m_patientInfoLabel = new QLabel("Выберите пациента, чтобы просмотреть и редактировать его семью.");
     m_patientInfoLabel->setWordWrap(true);
     m_patientInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_patientInfoLabel->setStyleSheet("font-weight: 600;");
 
     patientLayout->addWidget(m_patientInfoLabel);
     main->addWidget(patientGroup);
+    main->addSpacing(8);
 
     /* ================== СЕМЬЯ ================== */
 
     QGroupBox *familyGroup = new QGroupBox("Управление семьей пациента");
+    familyGroup->setStyleSheet(
+        "QGroupBox { margin-top: 6px; padding-top: 14px; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }");
     QVBoxLayout *familyLayout = new QVBoxLayout(familyGroup);
+    familyLayout->setContentsMargins(10, 8, 10, 8);
+    familyLayout->setSpacing(12);
 
     m_familyHeadLabel = new QLabel("Глава семьи: ---");
     m_familyHeadLabel->setWordWrap(true);
     m_familyHeadLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     familyLayout->addWidget(m_familyHeadLabel);
+    familyLayout->addSpacing(6);
 
     QLabel *membersLabel = new QLabel("Члены семьи:");
     familyLayout->addWidget(membersLabel);
+    familyLayout->addSpacing(4);
 
     m_familyList = new QListWidget();
     m_familyList->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -79,11 +97,18 @@ void FamilyViewerWidget::buildUI()
     m_familyList->setTextElideMode(Qt::ElideRight);
 
     familyLayout->addWidget(m_familyList);
+    familyLayout->addSpacing(6);
 
     QHBoxLayout *btnLayout = new QHBoxLayout();
-    m_addBtn = new QPushButton("➕ Добавить члена");
-    m_editBtn = new QPushButton("✍️ Редактировать");
-    m_removeBtn = new QPushButton("❌ Удалить");
+    m_addBtn = new QPushButton("Добавить члена");
+    m_addBtn->setIcon(QIcon(":/images/icon-add.svg"));
+    m_addBtn->setIconSize(QSize(16, 16));
+    m_editBtn = new QPushButton("Редактировать");
+    m_editBtn->setIcon(QIcon(":/images/icon-edit.svg"));
+    m_editBtn->setIconSize(QSize(16, 16));
+    m_removeBtn = new QPushButton("Удалить");
+    m_removeBtn->setIcon(QIcon(":/images/icon-trash.svg"));
+    m_removeBtn->setIconSize(QSize(16, 16));
 
     m_addBtn->setEnabled(false);
     m_editBtn->setEnabled(false);
@@ -96,7 +121,7 @@ void FamilyViewerWidget::buildUI()
 
     familyLayout->addLayout(btnLayout);
 
-    m_statusLabel = new QLabel();
+    m_statusLabel = new QLabel("Подсказка: выберите пациента, затем добавьте членов семьи или отредактируйте существующие связи.");
     m_statusLabel->setWordWrap(true);
     m_statusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
@@ -210,7 +235,7 @@ void FamilyViewerWidget::loadFamilyMembers() {
     }
 
     m_familyHeadLabel->setText(QString("Глава семьи: %1 (ID: %2)").arg(headPatient.fullName(), QString::number(m_selectedPatientId)));
-    m_patientInfoLabel->setText(QString("Управление семьей пациента %1").arg(headPatient.fullName()));
+    m_patientInfoLabel->setText(QString("Семья пациента: %1 (ID: %2)").arg(headPatient.fullName(), QString::number(m_selectedPatientId)));
     m_addBtn->setEnabled(true);
     
     refreshFamilyList();
@@ -279,8 +304,12 @@ void FamilyViewerWidget::onAddMember() {
     main->addWidget(searchEdit);
 
     QHBoxLayout *btns = new QHBoxLayout();
-    QPushButton *okBtn = new QPushButton("✅ ОК");
-    QPushButton *cancelBtn = new QPushButton("❌ Отмена");
+    QPushButton *okBtn = new QPushButton("ОК");
+    okBtn->setIcon(QIcon(":/images/icon-check.svg"));
+    okBtn->setIconSize(QSize(16, 16));
+    QPushButton *cancelBtn = new QPushButton("Отмена");
+    cancelBtn->setIcon(QIcon(":/images/icon-close.svg"));
+    cancelBtn->setIconSize(QSize(16, 16));
     btns->addStretch();
     btns->addWidget(okBtn);
     btns->addWidget(cancelBtn);

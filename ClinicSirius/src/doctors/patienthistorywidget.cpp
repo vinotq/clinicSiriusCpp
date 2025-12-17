@@ -7,6 +7,8 @@
 #include <QDialog>
 #include <QTextEdit>
 #include <QPushButton>
+#include <QCompleter>
+#include <QStringListModel>
 #include "../common/datamanager.h"
 
 PatientHistoryWidget::PatientHistoryWidget(QWidget *parent)
@@ -30,7 +32,6 @@ PatientHistoryWidget::PatientHistoryWidget(QWidget *parent)
     m_patientsList = new QListWidget();
     m_patientsList->setMinimumHeight(150);
     m_patientsList->setSelectionMode(QAbstractItemView::SingleSelection);
-    mainLayout->addWidget(new QLabel("Найденные пациенты:"));
     mainLayout->addWidget(m_patientsList);
 
     m_appointmentsList = new QListWidget();
@@ -39,16 +40,24 @@ PatientHistoryWidget::PatientHistoryWidget(QWidget *parent)
     mainLayout->addWidget(m_appointmentsList);
 
     connect(m_searchButton, &QPushButton::clicked, this, &PatientHistoryWidget::onSearchClicked);
+    connect(m_searchEdit, &QLineEdit::textChanged, this, &PatientHistoryWidget::onSearchTextChanged);
     connect(m_patientsList, &QListWidget::itemClicked, this, &PatientHistoryWidget::onPatientSelected);
+    connect(m_patientsList, &QListWidget::itemDoubleClicked, this, &PatientHistoryWidget::onPatientSelected);
+    connect(m_appointmentsList, &QListWidget::itemDoubleClicked, this, &PatientHistoryWidget::onAppointmentDoubleClicked);
+
+    populateCompleter();
 }
 
 void PatientHistoryWidget::onSearchClicked() {
+    onSearchTextChanged(m_searchEdit->text());
+}
+
+void PatientHistoryWidget::onSearchTextChanged(const QString &text) {
     m_patientsList->clear();
     m_appointmentsList->clear();
 
-    QString query = m_searchEdit->text().trimmed();
+    QString query = text.trimmed();
     if (query.isEmpty()) {
-        QMessageBox::information(this, "Пустой запрос", "Введите фамилию или имя для поиска.");
         return;
     }
 
@@ -65,9 +74,8 @@ void PatientHistoryWidget::onSearchClicked() {
         }
     }
 
-    if (m_patientsList->count() == 0) {
-        QMessageBox::information(this, "Не найдено", "Пациенты не найдены по заданному запросу.");
-    }
+    // подсказка: оставить информацию только если поиск по кнопке
+    // (сняли всплывающие предупреждения при живом поиске)
 }
 
 void PatientHistoryWidget::onPatientSelected(QListWidgetItem *item) {
@@ -92,14 +100,15 @@ void PatientHistoryWidget::onPatientSelected(QListWidgetItem *item) {
         apItem->setData(Qt::UserRole, ap.id_ap);
         m_appointmentsList->addItem(apItem);
     }
-    
-    connect(m_appointmentsList, &QListWidget::itemClicked, this, &PatientHistoryWidget::onAppointmentSelected);
 }
 
-void PatientHistoryWidget::onAppointmentSelected(QListWidgetItem *item) {
+void PatientHistoryWidget::onAppointmentDoubleClicked(QListWidgetItem *item) {
     if (!item) return;
     int appointmentId = item->data(Qt::UserRole).toInt();
-    
+    openAppointmentDetails(appointmentId);
+}
+
+void PatientHistoryWidget::openAppointmentDetails(int appointmentId) {
     Recipe recipe = m_dataManager.getRecipeByAppointmentId(appointmentId);
     Appointment ap = m_dataManager.getAppointmentById(appointmentId);
     Doctor d = m_dataManager.getDoctorById(ap.id_doctor);
@@ -145,4 +154,22 @@ void PatientHistoryWidget::onAppointmentSelected(QListWidgetItem *item) {
     
     detailDialog->setAttribute(Qt::WA_DeleteOnClose);  // Auto-delete on close
     detailDialog->show();  // Non-blocking show instead of exec
+}
+
+void PatientHistoryWidget::populateCompleter() {
+    QStringList names;
+    QList<Patient> all = m_dataManager.getAllPatients();
+    for (const auto &p : all) {
+        names << p.fullName();
+        if (!p.phone_number.isEmpty()) names << p.phone_number;
+    }
+    if (!m_completer) {
+        m_completer = new QCompleter(names, this);
+        m_completer->setCaseSensitivity(Qt::CaseInsensitive);
+        m_completer->setFilterMode(Qt::MatchContains);
+        m_searchEdit->setCompleter(m_completer);
+    } else {
+        auto model = new QStringListModel(names, m_completer);
+        m_completer->setModel(model);
+    }
 }

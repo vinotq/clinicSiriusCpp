@@ -61,16 +61,28 @@ void StatsBadge::setLabel(const QString &label) {
 }
 
 void StatsBadge::setIcon(const QString &iconPath) {
-    if (!iconPath.isEmpty()) {
-            QString key = iconPath.toLower();
-            QString emoji = "🔹";
-            if (key.contains("up")) emoji = "⬆️";
-            else if (key.contains("down")) emoji = "⬇️";
-            else if (key.contains("doctor") || key.contains("medical")) emoji = QString::fromUtf8("👩\u200D⚕️");
-            else if (key.contains("check")) emoji = "✅";
-            else if (key.contains("cancel") || key.contains("delete")) emoji = "🗑";
-            iconLabel->setText(emoji);
-            QFont f = iconLabel->font(); f.setPointSize(12); iconLabel->setFont(f);
+    QString resolved = iconPath;
+    QString key = iconPath.toLower();
+
+    if (resolved.isEmpty()) {
+        resolved = ":/images/icon-info.svg";
+    }
+
+    if (!resolved.startsWith(":/")) {
+        if (key.contains("up")) resolved = ":/images/icon-arrow-up.svg";
+        else if (key.contains("down")) resolved = ":/images/icon-arrow-down.svg";
+        else if (key.contains("doctor") || key.contains("medical")) resolved = ":/images/icon-service-doctor.svg";
+        else if (key.contains("check") || key.contains("success")) resolved = ":/images/icon-check.svg";
+        else if (key.contains("cancel") || key.contains("delete")) resolved = ":/images/icon-trash.svg";
+        else resolved = ":/images/icon-info.svg";
+    }
+
+    QPixmap pm(resolved);
+    if (!pm.isNull()) {
+        iconLabel->setPixmap(pm.scaled(24, 24, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        iconLabel->setText("");
+    } else {
+        iconLabel->clear();
     }
 }
 

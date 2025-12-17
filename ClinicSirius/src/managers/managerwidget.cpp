@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QShortcut>
 #include <QStyledItemDelegate>
+#include <QIcon>
+#include <QPixmap>
 #include "managers/managerscheduleviewer.h"
 #include "managers/roomscheduleviewer.h"
 #include "managers/patientmanagementdialog.h"
@@ -86,12 +88,12 @@ QWidget* ManagerWidget::createSidebarWidget() {
 
     m_sidebar = new QListWidget();
     m_sidebar->setObjectName("navigationSidebar");
-    m_sidebar->addItem("📊 Дашборд");
-    m_sidebar->addItem("📅 Расписание врачей");
-    m_sidebar->addItem("🏥 Расписание кабинетов");
-    m_sidebar->addItem("👥 Пациенты");
-    m_sidebar->addItem("👨‍👩‍👧 Управление семьей");
-    m_sidebar->addItem("🛠 Массовые операции");
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-dashboard.svg"), "Дашборд"));
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-doctors.svg"), "Расписание врачей"));
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-rooms.svg"), "Расписание кабинетов"));
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-patients.svg"), "Пациенты"));
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-family.svg"), "Управление семьей"));
+    m_sidebar->addItem(new QListWidgetItem(QIcon(":/images/icon-mgr-bulk.svg"), "Массовые операции"));
     
     m_sidebar->setSelectionMode(QAbstractItemView::SingleSelection);
     m_sidebar->setItemDelegate(new QStyledItemDelegate(m_sidebar));
@@ -134,10 +136,17 @@ void ManagerWidget::createDashboardPage() {
     QVBoxLayout* scheduleCardLayout = new QVBoxLayout(scheduleCard);
     scheduleCardLayout->setContentsMargins(16, 16, 16, 16);
     scheduleCard->setProperty("class", "manager-quick-card");
-    QLabel* scheduleTitle = new QLabel("📅 Управление расписанием");
     QFont cardFont; cardFont.setPointSize(12); cardFont.setBold(true);
+    QHBoxLayout* scheduleHeader = new QHBoxLayout();
+    QLabel* scheduleIcon = new QLabel();
+    scheduleIcon->setPixmap(QPixmap(":/images/icon-calendar.svg").scaled(18, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    scheduleIcon->setFixedSize(18,18);
+    QLabel* scheduleTitle = new QLabel("Управление расписанием");
     scheduleTitle->setFont(cardFont);
-    scheduleCardLayout->addWidget(scheduleTitle);
+    scheduleHeader->addWidget(scheduleIcon);
+    scheduleHeader->addWidget(scheduleTitle);
+    scheduleHeader->addStretch();
+    scheduleCardLayout->addLayout(scheduleHeader);
     QLabel* scheduleDesc = new QLabel("Просмотр и управление расписанием врачей, создание записей.");
     scheduleDesc->setWordWrap(true);
     scheduleDesc->setProperty("class", "manager-quick-desc");
@@ -148,9 +157,16 @@ void ManagerWidget::createDashboardPage() {
     QVBoxLayout* patientsCardLayout = new QVBoxLayout(patientsCard);
     patientsCardLayout->setContentsMargins(16, 16, 16, 16);
     patientsCard->setProperty("class", "manager-quick-card");
-    QLabel* patientsTitle = new QLabel("👥 Управление пациентами");
+    QHBoxLayout* patientsHeader = new QHBoxLayout();
+    QLabel* patientsIcon = new QLabel();
+    patientsIcon->setPixmap(QPixmap(":/images/icon-user.svg").scaled(18, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    patientsIcon->setFixedSize(18,18);
+    QLabel* patientsTitle = new QLabel("Управление пациентами");
     patientsTitle->setFont(cardFont);
-    patientsCardLayout->addWidget(patientsTitle);
+    patientsHeader->addWidget(patientsIcon);
+    patientsHeader->addWidget(patientsTitle);
+    patientsHeader->addStretch();
+    patientsCardLayout->addLayout(patientsHeader);
     QLabel* patientsDesc = new QLabel("Добавление, редактирование и управление профилями пациентов.");
     patientsDesc->setWordWrap(true);
     patientsDesc->setProperty("class", "manager-quick-desc");
@@ -161,9 +177,16 @@ void ManagerWidget::createDashboardPage() {
     QVBoxLayout* bulkCardLayout = new QVBoxLayout(bulkCard);
     bulkCardLayout->setContentsMargins(16, 16, 16, 16);
     bulkCard->setProperty("class", "manager-quick-card");
-    QLabel* bulkTitle = new QLabel("🛠 Массовые операции");
+    QHBoxLayout* bulkHeader = new QHBoxLayout();
+    QLabel* bulkIcon = new QLabel();
+    bulkIcon->setPixmap(QPixmap(":/images/icon-refresh.svg").scaled(18, 18, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    bulkIcon->setFixedSize(18,18);
+    QLabel* bulkTitle = new QLabel("Массовые операции");
     bulkTitle->setFont(cardFont);
-    bulkCardLayout->addWidget(bulkTitle);
+    bulkHeader->addWidget(bulkIcon);
+    bulkHeader->addWidget(bulkTitle);
+    bulkHeader->addStretch();
+    bulkCardLayout->addLayout(bulkHeader);
     QLabel* bulkDesc = new QLabel("Создание слотов расписания, пакетные операции.");
     bulkDesc->setWordWrap(true);
     bulkDesc->setProperty("class", "manager-quick-desc");

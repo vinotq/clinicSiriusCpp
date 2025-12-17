@@ -8,9 +8,8 @@
    to show the application/logo images. Use `QPushButton[class="icon-only"]`
    for square icon buttons that rely on background-image. */
 
-/* Logo placeholders — use emoji text on the QLabel itself instead
-   (images removed). To show the logo, set the label text to the
-   hospital emoji "🏥" (or another emoji) in UI code. */
+/* Logo placeholders — use SVG resources (clinic.svg) on QLabel or via
+   class-specific pixmaps; avoid emoji fallbacks to keep UI consistent. */
 QLabel[class="app-logo"] {
     min-height: 40px;
     min-width: 120px;
@@ -523,10 +522,11 @@ QLabel[class="patient-status-label"] {
 
 /* Icon label outlines to improve contrast */
 QLabel[class="info-icon"], QLabel[class="service-icon"], QLabel[class="header-logo-icon"], QLabel[class="doctor-card-icon"], QLabel[class="stats-icon"], QLabel[class="contact-icon"] {
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 6px;
-    padding: 6px;
-    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px;
+    background-color: #f8fafc;
+    color: #2563eb;
 }
 
 /* Cards and important regions should have subtle outlines */
@@ -1289,6 +1289,7 @@ QWidget[class="content-widget"] {
 QWidget[class="hero-section-widget"] {
     background-color: #ffffff;
     border-radius: 8px;
+    padding: 4px 0;
 }
 
 /* ============================================================================
@@ -1302,6 +1303,7 @@ QPushButton[class="hero-profile-btn"] {
     color: #3b82f6;
     font-weight: 600;
     font-size: 13px;
+    padding: 12px 16px;
 }
 
 QPushButton[class="hero-profile-btn"]:hover {
@@ -1315,6 +1317,7 @@ QPushButton[class="hero-booking-btn"] {
     border-radius: 6px;
     font-weight: 600;
     font-size: 13px;
+    padding: 12px 16px;
 }
 
 QPushButton[class="hero-booking-btn"]:hover {
@@ -1323,6 +1326,21 @@ QPushButton[class="hero-booking-btn"]:hover {
 
 QPushButton[class="hero-booking-btn"]:pressed {
     background-color: #1d4ed8;
+}
+
+QPushButton[class="hero-outline-btn"] {
+    background-color: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    color: #1f2937;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 12px 16px;
+}
+
+QPushButton[class="hero-outline-btn"]:hover {
+    border-color: #3b82f6;
+    color: #1d4ed8;
 }
 
 /* ============================================================================
@@ -1359,6 +1377,16 @@ QLabel[class="feature-label"] {
     padding: 12px;
     background-color: #ffffff;
     border-radius: 6px;
+}
+
+QLabel[class="feature-dot"] {
+    background-color: #3b82f6;
+    border: 2px solid #e0e7ff;
+    border-radius: 7px;
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
 }
 
 QLabel[class="faq-question-label"] {
@@ -1495,6 +1523,29 @@ ServiceCard:hover {
 QLabel[class="service-card-description"] {
     color: #6b7280;
     font-size: 11px;
+}
+
+QLabel[class="dialog-title"] {
+    font-size: 15pt;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+QListWidget[class="upcoming-list"] {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+QListWidget[class="upcoming-list"]::item {
+    padding: 10px 8px;
+    border-radius: 6px;
+}
+
+QListWidget[class="upcoming-list"]::item:selected {
+    background-color: #e0ecff;
+    color: #1d4ed8;
 }
 
 AuthWindow {
@@ -1850,10 +1901,20 @@ QPushButton[class="icon-button"] {
     min-width: 32px;
     min-height: 24px;
     padding: 0px;
+    color: #2563eb;
 }
 
 QPushButton[class="icon-button"]:hover {
     background-color: #e5e7eb;
+}
+
+/* Accent text/icon color for link-like and nav buttons */
+QPushButton[class="login-forgot"],
+QPushButton[class="login-link"],
+QPushButton[class="secondary"],
+QPushButton[class="nav-button"],
+QPushButton[class="accent-icon"] {
+    color: #2563eb;
 }
 
 /* Delete button style */

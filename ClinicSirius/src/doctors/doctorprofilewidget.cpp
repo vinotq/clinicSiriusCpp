@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QDate>
 #include <QTimer>
+#include <QIcon>
 
 DoctorProfileWidget::DoctorProfileWidget(QWidget *parent)
     : QWidget(parent),
@@ -65,10 +66,12 @@ void DoctorProfileWidget::buildUI() {
     settingsLayout->addWidget(settingsSection);
 
     saveStatusLabel = new QLabel();
-    saveButton = new QPushButton("💾 Сохранить");
-    saveButton->setIconSize(QSize(14,14));
-    deleteButton = new QPushButton("🗑 Удалить профиль");
-    deleteButton->setIconSize(QSize(14,14));
+    saveButton = new QPushButton("Сохранить");
+    saveButton->setIcon(QIcon(":/images/icon-save.svg"));
+    saveButton->setIconSize(QSize(16,16));
+    deleteButton = new QPushButton("Удалить профиль");
+    deleteButton->setIcon(QIcon(":/images/icon-trash.svg"));
+    deleteButton->setIconSize(QSize(16,16));
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(saveButton);

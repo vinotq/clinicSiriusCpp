@@ -3,12 +3,17 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QIcon>
+#include <QComboBox>
+#include <QLineEdit>
+#include <algorithm>
 
 BulkOperationsDialog::BulkOperationsDialog(QWidget* parent)
     : QDialog(parent), m_dataManager(QString()) {
     setWindowTitle("Массовые операции — создать окна приема");
     resize(600, 300);
     loadDoctors();
+    loadRooms();
     buildUI();
 }
 
@@ -23,6 +28,23 @@ void BulkOperationsDialog::loadDoctors() {
     m_doctorCompleter->setCaseSensitivity(Qt::CaseInsensitive);
 }
 
+void BulkOperationsDialog::loadRooms() {
+    m_rooms = m_dataManager.getAllRooms();
+    std::sort(m_rooms.begin(), m_rooms.end(), [](const Room &a, const Room &b) {
+        return a.room_number.toLower() < b.room_number.toLower();
+    });
+
+    QStringList roomNumbers;
+    for (const Room &r : m_rooms) {
+        roomNumbers.append(r.room_number);
+    }
+    roomNumbers.removeDuplicates();
+    roomNumbers.sort();
+
+    m_roomCompleter = new QCompleter(roomNumbers, this);
+    m_roomCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+}
+
 void BulkOperationsDialog::buildUI() {
     QVBoxLayout* main = new QVBoxLayout(this);
     main->setContentsMargins(12, 12, 12, 12);
@@ -33,10 +55,20 @@ void BulkOperationsDialog::buildUI() {
     m_doctorEdit = new QLineEdit();
     m_doctorEdit->setPlaceholderText("Введите имя врача...");
     m_doctorEdit->setCompleter(m_doctorCompleter);
+    m_roomCombo = new QComboBox();
+    m_roomCombo->setEditable(true);
+    m_roomCombo->setInsertPolicy(QComboBox::NoInsert);
+    m_roomCombo->setCompleter(m_roomCompleter);
+    m_roomCombo->lineEdit()->setPlaceholderText("Номер кабинета...");
+    for (const Room &r : m_rooms) {
+        m_roomCombo->addItem(r.room_number, r.id_room);
+    }
     m_dateEdit = new QDateEdit(QDate::currentDate());
     m_dateEdit->setCalendarPopup(true);
     row1->addWidget(new QLabel("Врач:"), 0);
     row1->addWidget(m_doctorEdit, 1);
+    row1->addWidget(new QLabel("Кабинет:"), 0);
+    row1->addWidget(m_roomCombo, 1);
     row1->addWidget(new QLabel("Дата:"), 0);
     row1->addWidget(m_dateEdit, 0);
     main->addLayout(row1);
@@ -72,8 +104,12 @@ void BulkOperationsDialog::buildUI() {
 
     QHBoxLayout* footer = new QHBoxLayout();
     footer->setSpacing(8);
-    m_applyBtn = new QPushButton("➕ Создать слоты");
-    m_cancelBtn = new QPushButton("❌ Отмена");
+    m_applyBtn = new QPushButton("Создать слоты");
+    m_applyBtn->setIcon(QIcon(":/images/icon-add.svg"));
+    m_applyBtn->setIconSize(QSize(16,16));
+    m_cancelBtn = new QPushButton("Отмена");
+    m_cancelBtn->setIcon(QIcon(":/images/icon-close.svg"));
+    m_cancelBtn->setIconSize(QSize(16,16));
     footer->addStretch();
     footer->addWidget(m_applyBtn);
     footer->addWidget(m_cancelBtn);
@@ -89,6 +125,12 @@ void BulkOperationsDialog::onApply() {
     QString doctorName = m_doctorEdit->text().trimmed();
     if (doctorName.isEmpty()) {
         QMessageBox::warning(this, "Ошибка", "Введите имя врача");
+        return;
+    }
+
+    QString roomText = m_roomCombo->currentText().trimmed();
+    if (roomText.isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Выберите кабинет");
         return;
     }
     
@@ -107,6 +149,19 @@ void BulkOperationsDialog::onApply() {
         return;
     }
     
+    int roomId = -1;
+    for (const Room &r : m_rooms) {
+        if (r.room_number.compare(roomText, Qt::CaseInsensitive) == 0) {
+            roomId = r.id_room;
+            break;
+        }
+    }
+
+    if (roomId <= 0) {
+        QMessageBox::warning(this, "Ошибка", "Кабинет не найден");
+        return;
+    }
+
     QDate date = m_dateEdit->date();
     QTime start = m_startTimeEdit->time();
     QTime end = m_endTimeEdit->time();
@@ -132,6 +187,7 @@ void BulkOperationsDialog::onApply() {
         AppointmentSchedule sch;
         sch.id_ap_sch = m_dataManager.getNextScheduleId();
         sch.id_doctor = docId;
+        sch.id_room = roomId;
         sch.time_from = QDateTime(date, t);
         sch.time_to = QDateTime(date, slotEnd);
         sch.status = "free";
