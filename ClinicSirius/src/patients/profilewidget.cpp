@@ -11,6 +11,10 @@
 #include <QHBoxLayout>
 #include <QSet>
 #include <QJsonArray>
+#include <QStyle>
+#include <QIcon>
+#include <QPixmap>
+#include <QSize>
 
 ProfileWidget::ProfileWidget(QWidget *parent)
     : QWidget(parent),
@@ -111,7 +115,7 @@ void ProfileWidget::buildProfileTab() {
     snilsRow->setSpacing(8);
     snilsRow->setContentsMargins(0, 0, 0, 0);
     QLabel *snilsLabel = new QLabel("СНИЛС:");
-    QPushButton *snilsShowBtn = new QPushButton("👁");
+    QPushButton *snilsShowBtn = new QPushButton("👁️");
     snilsShowBtn->setMaximumWidth(32);
     snilsShowBtn->setMaximumHeight(24);
     snilsShowBtn->setProperty("class", "icon-button");
@@ -127,7 +131,7 @@ void ProfileWidget::buildProfileTab() {
     omsRow->setSpacing(8);
     omsRow->setContentsMargins(0, 0, 0, 0);
     QLabel *omsLabel = new QLabel("Полис ОМС:");
-    QPushButton *omsShowBtn = new QPushButton("👁");
+    QPushButton *omsShowBtn = new QPushButton("👁️");
     omsShowBtn->setMaximumWidth(32);
     omsShowBtn->setMaximumHeight(24);
     omsShowBtn->setProperty("class", "icon-button");
@@ -146,7 +150,7 @@ void ProfileWidget::buildProfileTab() {
             snilsShowBtn->setText("🙈");
         } else {
             snilsValue->setText("***");
-            snilsShowBtn->setText("👁");
+            snilsShowBtn->setText("👁️");
         }
     });
 
@@ -158,7 +162,7 @@ void ProfileWidget::buildProfileTab() {
             omsShowBtn->setText("🙈");
         } else {
             omsValue->setText("***");
-            omsShowBtn->setText("👁");
+            omsShowBtn->setText("👁️");
         }
     });
 
@@ -197,6 +201,12 @@ void ProfileWidget::buildProfileTab() {
     familyTitle->setProperty("class", "section-title");
     familyLayout->addWidget(familyTitle);
 
+    // Поиск в семье
+    familySearchBox = new QLineEdit();
+    familySearchBox->setPlaceholderText("Поиск по имени...");
+    familySearchBox->setMaximumHeight(32);
+    familyLayout->addWidget(familySearchBox);
+
     // Список семьи
     familyList = new QListWidget();
     familyList->setMinimumHeight(250);
@@ -210,7 +220,7 @@ void ProfileWidget::buildProfileTab() {
     QHBoxLayout *familyActions = new QHBoxLayout();
     familyActions->setSpacing(8);
     
-    removeFamilyButton = new QPushButton("🗑 Удалить из семьи");
+    removeFamilyButton = new QPushButton("Удалить из семьи");
     removeFamilyButton->setMinimumHeight(36);
     removeFamilyButton->setProperty("class", "danger-button");
 
@@ -237,7 +247,7 @@ void ProfileWidget::buildProfileTab() {
     codesLayout->addWidget(codesTitle);
 
     // Генерация кода
-    generateCodeButton = new QPushButton("✓ Сгенерировать код");
+    generateCodeButton = new QPushButton("Сгенерировать код");
     generateCodeButton->setMinimumHeight(36);
     invitationCodeDisplay = new QLineEdit();
     invitationCodeDisplay->setText("Нет активного кода");
@@ -253,31 +263,23 @@ void ProfileWidget::buildProfileTab() {
 
     // Использование кода
     QLabel *useCodeLabel = new QLabel("Присоединиться к семье:");
-    useCodeLabel->setStyleSheet("font-weight: 600; color: #1f2937;");
+    useCodeLabel->setProperty("class", "use-code-label");
     codesLayout->addWidget(useCodeLabel);
 
-    invitationCodeInput = new QLineEdit();
-    invitationCodeInput->setPlaceholderText("Введите 6-символный код...");
-    invitationCodeInput->setMaxLength(6);
-    invitationCodeInput->setMaximumWidth(200);
-    useCodeButton = new QPushButton("✓ Присоединиться");
+    useCodeButton = new QPushButton("Открыть диалог");
     useCodeButton->setMinimumHeight(36);
 
-    QHBoxLayout *codeInputLayout = new QHBoxLayout();
-    codeInputLayout->addWidget(invitationCodeInput);
-    codeInputLayout->addWidget(useCodeButton);
-    codeInputLayout->addStretch();
-    codesLayout->addLayout(codeInputLayout);
+    codesLayout->addWidget(useCodeButton);
 
     codeStatusLabel = new QLabel();
-    codeStatusLabel->setStyleSheet("font-weight: 500; font-size: 10pt;");
+    codeStatusLabel->setProperty("class", "status-label");
     codesLayout->addWidget(codeStatusLabel);
 
     scrollable->addContent(codesCard);
     scrollable->addStretch();
 
     profileLayout->addWidget(scrollable);
-    tabs->addTab(profileTab, "📋 Профиль");
+    tabs->addTab(profileTab, "Профиль");
 }
 
 void ProfileWidget::buildSettingsTab() {
@@ -332,13 +334,13 @@ void ProfileWidget::buildSettingsTab() {
 
     cardLayout->addLayout(form);
 
-    saveButton = new QPushButton("💾 Сохранить");
+    saveButton = new QPushButton("Сохранить");
     saveButton->setMinimumHeight(40);
-    deleteButton = new QPushButton("🗑 Удалить аккаунт");
+    deleteButton = new QPushButton("Удалить аккаунт");
     deleteButton->setMinimumHeight(40);
     deleteButton->setProperty("class", "danger-button");
     
-    refreshDataButton = new QPushButton("🔄 Обновить данные");
+    refreshDataButton = new QPushButton("Обновить данные");
     refreshDataButton->setMinimumHeight(40);
 
     saveStatusLabel = new QLabel();
@@ -361,7 +363,7 @@ void ProfileWidget::buildSettingsTab() {
     scrollable->addStretch();
 
     settingsLayout->addWidget(scrollable);
-    tabs->addTab(settingsTab, "⚙️ Настройки");
+    tabs->addTab(settingsTab, "Настройки");
 }
 
 void ProfileWidget::connectSignals() {
@@ -371,6 +373,17 @@ void ProfileWidget::connectSignals() {
     connect(saveButton, &QPushButton::clicked, this, &ProfileWidget::onSaveProfile);
     connect(deleteButton, &QPushButton::clicked, this, &ProfileWidget::onDeleteAccount);
     connect(refreshDataButton, &QPushButton::clicked, this, &ProfileWidget::onRefreshData);
+    
+    // Поиск в семье с real-time фильтром
+    if (familySearchBox) {
+        connect(familySearchBox, &QLineEdit::textChanged, this, [this](const QString &text) {
+            for (int i = 0; i < familyList->count(); ++i) {
+                QListWidgetItem *item = familyList->item(i);
+                bool matches = item->text().contains(text, Qt::CaseInsensitive);
+                item->setHidden(!matches && !text.isEmpty());
+            }
+        });
+    }
 }
 
 void ProfileWidget::setUser(const LoginUser &user) {
@@ -538,14 +551,14 @@ void ProfileWidget::loadFamily() {
 
 void ProfileWidget::onRemoveFamilyMember() {
     if (currentUser.type != LoginUser::PATIENT) {
-        addFamilyStatus->setText("❌ Удаление доступно только для пациентов");
+        addFamilyStatus->setText("Удаление доступно только для пациентов");
         return;
     }
 
     // Проверяем, выбран ли член семьи
     QListWidgetItem *currentItem = familyList->currentItem();
     if (!currentItem) {
-        addFamilyStatus->setText("❌ Выберите члена семьи для удаления");
+        addFamilyStatus->setText("Выберите члена семьи для удаления");
         return;
     }
 
@@ -563,18 +576,18 @@ void ProfileWidget::onRemoveFamilyMember() {
     for (const PatientGroup &pg : familyGroups) {
         if (pg.id_child == selectedPatientId) {
             dataManager.removeFamilyMember(pg.id_patient_group);
-            addFamilyStatus->setText("✓ Член семьи удален");
+            addFamilyStatus->setText("Член семьи удален");
             loadFamily();
             return;
         }
     }
 
-    addFamilyStatus->setText("❌ Не удалось удалить члена семьи");
+    addFamilyStatus->setText("Не удалось удалить члена семьи");
 }
 
 void ProfileWidget::onEditFamilyMember(QListWidgetItem *item) {
     if (currentUser.type != LoginUser::PATIENT) {
-        addFamilyStatus->setText("❌ Редактирование доступно только для пациентов");
+        addFamilyStatus->setText("Редактирование доступно только для пациентов");
         return;
     }
 
@@ -588,7 +601,7 @@ void ProfileWidget::onEditFamilyMember(QListWidgetItem *item) {
     connect(&dlg, &CreatePatientDialog::patientCreated, this, [&](const Patient &updated){
         Q_UNUSED(updated);
         loadFamily();
-        addFamilyStatus->setText("✓ Данные члена семьи обновлены");
+        addFamilyStatus->setText("Данные члена семьи обновлены");
     });
     dlg.exec();
 }
@@ -690,47 +703,17 @@ void ProfileWidget::onGenerateInvitationCode() {
 }
 
 void ProfileWidget::onUseInvitationCode() {
-    QString code = invitationCodeInput->text().toUpper().trimmed();
+    // Открываем модальный диалог для присоединения по коду
+    AddByCodeDialog dlg(currentUser.id, this);
     
-    if (code.isEmpty()) {
-        codeStatusLabel->setText("✗ Введите код приглашения");
-        codeStatusLabel->setStyleSheet("color: red;");
-        return;
-    }
-
-    if (code.length() != 6) {
-        codeStatusLabel->setText("✗ Код должен содержать 6 символов");
-        codeStatusLabel->setStyleSheet("color: red;");
-        return;
-    }
-
-    // Получаем информацию о коде
-    InvitationCode ic = dataManager.getInvitationCodeByCode(code);
+    connect(&dlg, &AddByCodeDialog::patientAdded, this, [this](int patientId, const QString &patientName) {
+        Q_UNUSED(patientId);
+        Q_UNUSED(patientName);
+        codeStatusLabel->setText("Вы успешно добавлены в семью!");
+        codeStatusLabel->setProperty("class", "status-label success");
+        loadFamily();
+        onRefreshData();
+    });
     
-    if (ic.id == 0) {
-        codeStatusLabel->setText("✗ Код не найден");
-        codeStatusLabel->setStyleSheet("color: red;");
-        return;
-    }
-
-    if (ic.used) {
-        codeStatusLabel->setText("✗ Код уже использован");
-        codeStatusLabel->setStyleSheet("color: red;");
-        return;
-    }
-
-    // Добавляем текущего пользователя в семью пригласившего
-    PatientGroup pg;
-    pg.id_patient_group = dataManager.getNextPatientGroupId();
-    pg.id_parent = ic.id_parent;
-    pg.id_child = currentUser.id;
-    dataManager.addFamilyMember(pg);
-
-    // Помечаем код как использованный
-    dataManager.useInvitationCode(code, currentUser.id);
-
-    codeStatusLabel->setText("✓ Вы успешно добавлены в семью!");
-    codeStatusLabel->setStyleSheet("color: green;");
-    invitationCodeInput->clear();
-    loadFamily();
+    dlg.exec();
 }

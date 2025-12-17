@@ -7,6 +7,7 @@
 #include <QFont>
 #include <QStyleOption>
 #include <QPainter>
+#include <QStyle>
 
 // Кнопка для дня
 class DayButton : public QPushButton {
@@ -18,6 +19,7 @@ public:
         setMaximumSize(50, 50);
         setCursor(Qt::PointingHandCursor);
         setFocusPolicy(Qt::StrongFocus);
+        setProperty("class", "day-button");
         updateStyle();
     }
 
@@ -35,62 +37,19 @@ public:
 
 private:
     void updateStyle() {
+        // Set properties so QSS can style based on state
         if (m_isSelected) {
-            // Выбранный день - темный синий
+            setProperty("state", "selected");
             setEnabled(true);
-            setStyleSheet(
-                "QPushButton {"
-                "  background-color: #2196F3;"
-                "  color: white;"
-                "  border: 2px solid #1976D2;"
-                "  border-radius: 4px;"
-                "  font-weight: bold;"
-                "  padding: 5px;"
-                "}"
-                "QPushButton:hover {"
-                "  background-color: #1976D2;"
-                "}"
-                "QPushButton:pressed {"
-                "  background-color: #1565C0;"
-                "}"
-            );
         } else if (m_isAvailable) {
-            // День с доступными слотами - светлый синий
+            setProperty("state", "available");
             setEnabled(true);
-            setStyleSheet(
-                "QPushButton {"
-                "  background-color: #E3F2FD;"
-                "  color: #1565C0;"
-                "  border: 2px solid #2196F3;"
-                "  border-radius: 4px;"
-                "  font-weight: bold;"
-                "  padding: 5px;"
-                "}"
-                "QPushButton:hover {"
-                "  background-color: #BBDEFB;"
-                "  border: 2px solid #1976D2;"
-                "}"
-                "QPushButton:pressed {"
-                "  background-color: #90CAF9;"
-                "}"
-            );
         } else {
-            // День без доступных слотов - серый
+            setProperty("state", "normal");
             setEnabled(false);
-            setStyleSheet(
-                "QPushButton {"
-                "  background-color: #F5F5F5;"
-                "  color: #9E9E9E;"
-                "  border: 1px solid #E0E0E0;"
-                "  border-radius: 4px;"
-                "  padding: 5px;"
-                "}"
-                "QPushButton:disabled {"
-                "  background-color: #F5F5F5;"
-                "  color: #BDBDBD;"
-                "}"
-            );
         }
+        style()->unpolish(this);
+        style()->polish(this);
     }
 
     QDate m_date;
@@ -114,13 +73,16 @@ void AppointmentCalendar::setupUI() {
     // Навигация по месяцам
     QHBoxLayout* navLayout = new QHBoxLayout();
     
-    QPushButton* prevBtn = new QPushButton("←");
+    QPushButton* prevBtn = new QPushButton();
     prevBtn->setMaximumWidth(40);
+    prevBtn->setText("←");
+    prevBtn->setIconSize(QSize(16,16));
     connect(prevBtn, &QPushButton::clicked, this, &AppointmentCalendar::onPrevMonth);
     
     QLabel* monthLabel = new QLabel();
     monthLabel->setAlignment(Qt::AlignCenter);
     monthLabel->setObjectName("monthLabel");
+    monthLabel->setWordWrap(true);  // REQ-018: Prevent text truncation
     QFont monthFont;
     monthFont.setPointSize(12);
     monthFont.setBold(true);

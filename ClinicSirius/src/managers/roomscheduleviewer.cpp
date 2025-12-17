@@ -1,4 +1,4 @@
-#include "managers/managerscheduleviewer.h"
+#include "managers/roomscheduleviewer.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -10,31 +10,23 @@
 #include <QMenu>
 #include "patients/appointmentbookingwidget.h"
 
-ManagerScheduleViewer::ManagerScheduleViewer(QWidget *parent)
-    : QWidget(parent), m_dataManager(nullptr) {
-    // fallback: caller should set DataManager via constructor overload or externally
+RoomScheduleViewer::RoomScheduleViewer(QWidget *parent)
+    : QWidget(parent), m_dataManager(QString()) {
     m_startDate = getMondayOfWeek(QDate::currentDate());
     buildUI();
-    loadDoctors();
+    loadRooms();
 }
 
-ManagerScheduleViewer::ManagerScheduleViewer(DataManager *dm, QWidget *parent)
-    : QWidget(parent), m_dataManager(dm) {
-    m_startDate = getMondayOfWeek(QDate::currentDate());
-    buildUI();
-    loadDoctors();
-}
-
-void ManagerScheduleViewer::buildUI() {
-    setWindowTitle("Расписание врачей");
+void RoomScheduleViewer::buildUI() {
+    setWindowTitle("Расписание кабинетов");
     resize(900, 600);
 
     QVBoxLayout *main = new QVBoxLayout(this);
 
-    // Doctor filter with completer and interval control
+    // Room filter with completer and interval control
     QHBoxLayout *top = new QHBoxLayout();
     m_filterEdit = new QLineEdit();
-    m_filterEdit->setPlaceholderText("Поиск врача...");
+    m_filterEdit->setPlaceholderText("Поиск кабинета...");
     top->addWidget(m_filterEdit, 1);
     
     // Add interval spinner
@@ -78,12 +70,12 @@ void ManagerScheduleViewer::buildUI() {
     m_scheduleTable->setContextMenuPolicy(Qt::CustomContextMenu);
     main->addWidget(m_scheduleTable, 1);
 
-    connect(m_filterEdit, &QLineEdit::textChanged, this, &ManagerScheduleViewer::onDoctorFilterChanged);
-    connect(m_prevBtn, &QPushButton::clicked, this, &ManagerScheduleViewer::onPrevWeek);
-    connect(m_nextBtn, &QPushButton::clicked, this, &ManagerScheduleViewer::onNextWeek);
-    connect(m_todayBtn, &QPushButton::clicked, this, &ManagerScheduleViewer::onToday);
-    connect(m_intervalSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, &ManagerScheduleViewer::onIntervalChanged);
-    connect(m_scheduleTable, &QTableWidget::customContextMenuRequested, this, &ManagerScheduleViewer::onTableContextMenu);
+    connect(m_filterEdit, &QLineEdit::textChanged, this, &RoomScheduleViewer::onRoomFilterChanged);
+    connect(m_prevBtn, &QPushButton::clicked, this, &RoomScheduleViewer::onPrevWeek);
+    connect(m_nextBtn, &QPushButton::clicked, this, &RoomScheduleViewer::onNextWeek);
+    connect(m_todayBtn, &QPushButton::clicked, this, &RoomScheduleViewer::onToday);
+    connect(m_intervalSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, &RoomScheduleViewer::onIntervalChanged);
+    connect(m_scheduleTable, &QTableWidget::customContextMenuRequested, this, &RoomScheduleViewer::onTableContextMenu);
     
     // Cell click to open booking widget
     connect(m_scheduleTable, &QTableWidget::cellClicked, this, [this](int row, int column){
@@ -94,8 +86,7 @@ void ManagerScheduleViewer::buildUI() {
         if (!it) return;
         int schId = it->data(Qt::UserRole).toInt();
         if (schId <= 0) return;
-        if (!m_dataManager) return;
-        AppointmentSchedule sch = m_dataManager->getScheduleById(schId);
+        AppointmentSchedule sch = m_dataManager.getScheduleById(schId);
         if (sch.id_ap_sch <= 0) return;
 
         // Check if slot is booked and show options
@@ -104,7 +95,7 @@ void ManagerScheduleViewer::buildUI() {
             // Find the appointment for detailed info
             Appointment apt;
             bool foundAppointment = false;
-            for (const Appointment &a : m_dataManager->getAllAppointments()) {
+            for (const Appointment &a : m_dataManager.getAllAppointments()) {
                 if (a.id_ap_sch == schId) {
                     apt = a;
                     foundAppointment = true;
@@ -115,7 +106,7 @@ void ManagerScheduleViewer::buildUI() {
             // Build detail message
             QString detailMsg = "Этот слот занят.";
             if (foundAppointment) {
-                Patient patient = m_dataManager->getPatientById(apt.id_patient);
+                Patient patient = m_dataManager.getPatientById(apt.id_patient);
                 detailMsg = QString("Слот занят пациентом: %1\n\nВремя: %2 - %3")
                     .arg(patient.fullName())
                     .arg(sch.time_from.toString("HH:mm"))
@@ -145,15 +136,15 @@ void ManagerScheduleViewer::buildUI() {
                 if (confirmReply == QMessageBox::Yes) {
                     // Delete appointment and mark slot as free
                     if (foundAppointment) {
-                        m_dataManager->deleteAppointment(apt.id_ap);
+                        m_dataManager.deleteAppointment(apt.id_ap);
                     }
                     
                     AppointmentSchedule updatedSch = sch;
                     updatedSch.status = "free";
-                    m_dataManager->updateSchedule(updatedSch);
+                    m_dataManager.updateSchedule(updatedSch);
                     
                     // Reload schedule
-                    loadScheduleForDoctor(m_currentDoctorId);
+                    loadScheduleForRoom(m_currentRoomId);
                     QMessageBox::information(this, "Успешно", "Запись отменена");
                 }
             } else if (msgBox.clickedButton() == rescheduleBtn) {
@@ -170,7 +161,7 @@ void ManagerScheduleViewer::buildUI() {
                     
                     // Reload schedule when reschedule widget closes
                     connect(reschedule, &QObject::destroyed, this, [this](QObject*){
-                        loadScheduleForDoctor(m_currentDoctorId);
+                        loadScheduleForRoom(m_currentRoomId);
                     });
                 }
             }
@@ -190,87 +181,87 @@ void ManagerScheduleViewer::buildUI() {
 
         // When the booking widget closes, reload schedules in case it was booked
         connect(booking, &QObject::destroyed, this, [this](QObject*){
-            loadScheduleForDoctor(m_currentDoctorId);
+            loadScheduleForRoom(m_currentRoomId);
         });
     });
 }
 
-void ManagerScheduleViewer::loadDoctors() {
-    if (m_dataManager) m_allDoctors = m_dataManager->getAllDoctors();
-    // Sort doctors by full name
-    std::sort(m_allDoctors.begin(), m_allDoctors.end(), [](const Doctor &a, const Doctor &b){
-        return a.fullName() < b.fullName();
+void RoomScheduleViewer::loadRooms() {
+    m_allRooms = m_dataManager.getAllRooms();
+    // Sort rooms by room number
+    std::sort(m_allRooms.begin(), m_allRooms.end(), [](const Room &a, const Room &b){
+        return a.room_number.toInt() < b.room_number.toInt();
     });
     
-    // Set up completer with doctor names
-    QStringList doctorNames;
-    for (const Doctor &d : m_allDoctors) {
-        doctorNames.append(d.fullName());
+    // Set up completer with room numbers
+    QStringList roomNumbers;
+    for (const Room &r : m_allRooms) {
+        roomNumbers.append(r.room_number);
     }
-    doctorNames.sort();
-    m_doctorCompleter = new QCompleter(doctorNames, this);
-    m_doctorCompleter->setCaseSensitivity(Qt::CaseInsensitive);
-    m_filterEdit->setCompleter(m_doctorCompleter);
+    roomNumbers.sort();
+    m_roomCompleter = new QCompleter(roomNumbers, this);
+    m_roomCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+    m_filterEdit->setCompleter(m_roomCompleter);
     
-    m_currentDoctorId = -1;
-    // Don't load schedule by default - table should be empty until user selects a doctor
+    m_currentRoomId = -1;
+    // Don't load schedule by default - table should be empty until user selects a room
 }
 
-void ManagerScheduleViewer::onDoctorFilterChanged(const QString &text) {
-    // Apply doctor filter in real-time
-    applyDoctorFilter(text);
+void RoomScheduleViewer::onRoomFilterChanged(const QString &text) {
+    // Apply room filter in real-time
+    applyRoomFilter(text);
 }
 
-void ManagerScheduleViewer::applyDoctorFilter(const QString &text) {
+void RoomScheduleViewer::applyRoomFilter(const QString &text) {
     QString trimmedText = text.trimmed();
     
     if (trimmedText.isEmpty()) {
-        m_currentDoctorId = -1;
+        m_currentRoomId = -1;
     } else {
-        m_currentDoctorId = -1;
-        for (const Doctor &d : m_allDoctors) {
-            if (d.fullName().contains(trimmedText, Qt::CaseInsensitive)) {
-                m_currentDoctorId = d.id_doctor;
+        m_currentRoomId = -1;
+        for (const Room &r : m_allRooms) {
+            if (r.room_number.contains(trimmedText, Qt::CaseInsensitive)) {
+                m_currentRoomId = r.id_room;
                 break;
             }
         }
     }
-    loadScheduleForDoctor(m_currentDoctorId);
+    loadScheduleForRoom(m_currentRoomId);
 }
 
-void ManagerScheduleViewer::onPrevWeek() {
+void RoomScheduleViewer::onPrevWeek() {
     m_startDate = m_startDate.addDays(-7);
-    loadScheduleForDoctor(m_currentDoctorId);
+    loadScheduleForRoom(m_currentRoomId);
 }
 
-void ManagerScheduleViewer::onNextWeek() {
+void RoomScheduleViewer::onNextWeek() {
     m_startDate = m_startDate.addDays(7);
-    loadScheduleForDoctor(m_currentDoctorId);
+    loadScheduleForRoom(m_currentRoomId);
 }
 
-void ManagerScheduleViewer::onToday() {
+void RoomScheduleViewer::onToday() {
     m_startDate = getMondayOfWeek(QDate::currentDate());
-    loadScheduleForDoctor(m_currentDoctorId);
+    loadScheduleForRoom(m_currentRoomId);
 }
 
-void ManagerScheduleViewer::onIntervalChanged(int value) {
+void RoomScheduleViewer::onIntervalChanged(int value) {
     m_timeIntervalMinutes = value;
-    loadScheduleForDoctor(m_currentDoctorId);
+    loadScheduleForRoom(m_currentRoomId);
 }
 
-void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
+void RoomScheduleViewer::loadScheduleForRoom(int roomId) {
     m_scheduleTable->clear();
     m_scheduleTable->setRowCount(0);
     m_scheduleTable->setColumnCount(1);
 
-    // If no doctor is selected, show empty table with message
-    if (doctorId <= 0) {
+    // If no room is selected, show empty table with message
+    if (roomId <= 0) {
         QStringList headers;
-        headers << "Выберите врача";
+        headers << "Выберите кабинет";
         m_scheduleTable->setColumnCount(1);
         m_scheduleTable->setHorizontalHeaderLabels(headers);
         
-        QTableWidgetItem *msgItem = new QTableWidgetItem("Выберите врача для просмотра расписания");
+        QTableWidgetItem *msgItem = new QTableWidgetItem("Выберите кабинет для просмотра расписания");
         msgItem->setTextAlignment(Qt::AlignCenter);
         msgItem->setFlags(msgItem->flags() & ~Qt::ItemIsEditable & ~Qt::ItemIsSelectable);
         m_scheduleTable->setRowCount(1);
@@ -282,7 +273,7 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
     headers << "Время";
     QDate start = m_startDate;
     QDate today = QDate::currentDate();
-    int todayColumn = -1;
+    int todayColumn = -1;  // Column for today's date
     
     if (m_weekLabel) {
         QString label = QString("%1 — %2").arg(start.toString("dd.MM.yyyy"), start.addDays(6).toString("dd.MM.yyyy"));
@@ -291,7 +282,7 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
     for (int i = 0; i < 7; ++i) {
         QDate dt = start.addDays(i);
         if (dt == today) {
-            todayColumn = i + 1;
+            todayColumn = i + 1;  // +1 because column 0 is time
         }
         QString dayName;
         switch (dt.dayOfWeek()) {
@@ -313,15 +304,15 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
     if (todayColumn > 0 && todayColumn < m_scheduleTable->columnCount()) {
         QTableWidgetItem *headerItem = m_scheduleTable->horizontalHeaderItem(todayColumn);
         if (headerItem) {
-            headerItem->setBackground(QColor(200, 220, 255));
+            headerItem->setBackground(QColor(200, 220, 255));  // Light blue background for today
             headerItem->setFont([](){ QFont f; f.setBold(true); return f; }());
         }
     }
 
-    // For doctor view: collect schedules for this doctor
-    if (!m_dataManager) return;
-    QList<AppointmentSchedule> schedules = m_dataManager->getDoctorSchedules(doctorId);
+    // For room view: collect schedules for this room
+    QList<AppointmentSchedule> schedules = m_dataManager.getSchedulesByRoom(roomId);
 
+    // Use m_timeIntervalMinutes instead of calculating GCD
     int minimalInterval = m_timeIntervalMinutes;
     if (minimalInterval < 5) minimalInterval = 5;
     if (minimalInterval > 120) minimalInterval = 120;
@@ -337,6 +328,7 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
         int hour = minutes / 60;
         int minute = minutes % 60;
         QTableWidgetItem *timeItem = new QTableWidgetItem(QString("%1:%2").arg(hour, 2, 10, QChar('0')).arg(minute, 2, 10, QChar('0')));
+        // Make time column non-editable and non-selectable
         timeItem->setFlags(timeItem->flags() & ~Qt::ItemIsEditable & ~Qt::ItemIsSelectable);
         m_scheduleTable->setItem(r, 0, timeItem);
     }
@@ -364,9 +356,10 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
             statusText = "Занято";
             bgColor = QColor(255, 165, 0);
             
+            // Get appointment info for tooltip
             Appointment apt;
             bool found = false;
-            for (const Appointment &a : m_dataManager->getAllAppointments()) {
+            for (const Appointment &a : m_dataManager.getAllAppointments()) {
                 if (a.id_ap_sch == s.id_ap_sch) {
                     apt = a;
                     found = true;
@@ -374,12 +367,12 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
                 }
             }
             if (found) {
-                Patient patient = m_dataManager->getPatientById(apt.id_patient);
-                Room room = m_dataManager->getRoomById(s.id_room);
-                tooltipText = QString("ID записи: %1\nПациент: %2\nКабинет: %3\nВремя: %4 - %5\nСтатус: %6")
+                Patient patient = m_dataManager.getPatientById(apt.id_patient);
+                Doctor doctor = m_dataManager.getDoctorById(apt.id_doctor);
+                tooltipText = QString("ID записи: %1\nПациент: %2\nВрач: %3\nВремя: %4 - %5\nСтатус: %6")
                     .arg(apt.id_ap)
                     .arg(patient.fullName())
-                    .arg(room.room_number)
+                    .arg(doctor.fullName())
                     .arg(s.time_from.toString("HH:mm"))
                     .arg(s.time_to.toString("HH:mm"))
                     .arg(statusText);
@@ -387,17 +380,21 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
         }
 
         QTableWidgetItem *cell = new QTableWidgetItem(statusText);
+        // Make schedule cells non-editable
         cell->setFlags(cell->flags() & ~Qt::ItemIsEditable);
         cell->setBackground(bgColor);
         cell->setForeground(Qt::white);
         cell->setTextAlignment(Qt::AlignCenter);
         cell->setData(Qt::UserRole, s.id_ap_sch);
         
+        // Slightly adjust background color for today's slots if visible
         if (column == todayColumn && todayColumn > 0) {
+            // Make color slightly darker/brighter to indicate today
             bgColor = bgColor.darker(110);
             cell->setBackground(bgColor);
         }
         
+        // Add tooltip if appointment has info
         if (!tooltipText.isEmpty()) {
             cell->setToolTip(tooltipText);
         }
@@ -408,12 +405,15 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
         }
     }
     
+    // Highlight empty cells in today's column with light background
+    // Make all empty free slots non-selectable/non-clickable
     if (todayColumn > 0) {
         for (int r = 0; r < rowsCount; ++r) {
             QTableWidgetItem *cell = m_scheduleTable->item(r, todayColumn);
             if (!cell) {
+                // Create empty cell for today's column with light background
                 QTableWidgetItem *emptyCell = new QTableWidgetItem("");
-                emptyCell->setBackground(QColor(230, 240, 255));
+                emptyCell->setBackground(QColor(230, 240, 255));  // Very light blue
                 emptyCell->setFlags(emptyCell->flags() & ~Qt::ItemIsEditable & ~Qt::ItemIsSelectable);
                 emptyCell->setToolTip("Слот свободен");
                 m_scheduleTable->setItem(r, todayColumn, emptyCell);
@@ -421,12 +421,14 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
         }
     }
     
+    // Make all remaining empty cells non-selectable
     for (int r = 0; r < rowsCount; ++r) {
         for (int c = 1; c < m_scheduleTable->columnCount(); ++c) {
             QTableWidgetItem *cell = m_scheduleTable->item(r, c);
             if (!cell) {
+                // Create empty cell for free slots - non-selectable
                 QTableWidgetItem *emptyCell = new QTableWidgetItem("");
-                emptyCell->setBackground(QColor(240, 240, 240));
+                emptyCell->setBackground(QColor(240, 240, 240));  // Very light gray
                 emptyCell->setFlags(emptyCell->flags() & ~Qt::ItemIsEditable & ~Qt::ItemIsSelectable);
                 emptyCell->setToolTip("Слот свободен");
                 m_scheduleTable->setItem(r, c, emptyCell);
@@ -435,17 +437,16 @@ void ManagerScheduleViewer::loadScheduleForDoctor(int doctorId) {
     }
 }
 
-void ManagerScheduleViewer::onTableContextMenu(const QPoint &pos) {
+void RoomScheduleViewer::onTableContextMenu(const QPoint &pos) {
     QTableWidgetItem *item = m_scheduleTable->itemAt(pos);
     if (!item) return;
     
     int schId = item->data(Qt::UserRole).toInt();
     if (schId <= 0) return;
     
-    if (!m_dataManager) return;
-    AppointmentSchedule sch = m_dataManager->getScheduleById(schId);
+    AppointmentSchedule sch = m_dataManager.getScheduleById(schId);
     if (sch.status.toLower() != "booked" && sch.status.toLower() != "busy") {
-        return;
+        return; // Only show menu for booked slots
     }
     
     QMenu contextMenu;
@@ -460,28 +461,27 @@ void ManagerScheduleViewer::onTableContextMenu(const QPoint &pos) {
             QMessageBox::Yes | QMessageBox::No);
         
         if (reply == QMessageBox::Yes) {
-            for (const Appointment &apt : m_dataManager->getAllAppointments()) {
+            // Get appointment and delete it
+            for (const Appointment &apt : m_dataManager.getAllAppointments()) {
                 if (apt.id_ap_sch == schId) {
-                    m_dataManager->deleteAppointment(apt.id_ap);
+                    m_dataManager.deleteAppointment(apt.id_ap);
                 }
             }
             
+            // Mark slot as free
             AppointmentSchedule updatedSch = sch;
             updatedSch.status = "free";
-            m_dataManager->updateSchedule(updatedSch);
+            m_dataManager.updateSchedule(updatedSch);
             
-            loadScheduleForDoctor(m_currentDoctorId);
+            // Reload schedule
+            loadScheduleForRoom(m_currentRoomId);
             QMessageBox::information(this, "Успешно", "Запись отменена");
         }
     }
 }
 
-QDate ManagerScheduleViewer::getMondayOfWeek(const QDate &date) const {
+QDate RoomScheduleViewer::getMondayOfWeek(const QDate &date) const {
+    // Qt's dayOfWeek: 1 = Monday, 7 = Sunday
     int daysFromMonday = date.dayOfWeek() - 1;
     return date.addDays(-daysFromMonday);
-}
-
-void ManagerScheduleViewer::setCurrentDoctor(int doctorId) {
-    m_currentDoctorId = doctorId;
-    loadScheduleForDoctor(doctorId);
 }

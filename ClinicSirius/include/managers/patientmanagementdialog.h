@@ -1,14 +1,15 @@
 #ifndef PATIENTMANAGEMENTDIALOG_H
 #define PATIENTMANAGEMENTDIALOG_H
 
-#include <QDialog>
+#include <QWidget>
 #include <QLineEdit>
-#include <QListWidget>
+#include <QTableWidget>
 #include <QPushButton>
+#include <QCompleter>
 #include "common/datamanager.h"
 #include "patients/createpatientdialog.h"
 
-class PatientManagementDialog : public QDialog {
+class PatientManagementDialog : public QWidget {
     Q_OBJECT
 public:
     explicit PatientManagementDialog(QWidget* parent = nullptr);
@@ -22,13 +23,17 @@ private slots:
     void refreshList(const QString &filter = QString());
 
 private:
+    void buildUI();
+    void showAddToFamilyDialog();
+
     DataManager m_dataManager;
     QLineEdit* m_searchEdit;
-    QListWidget* m_list;
+    QTableWidget* m_patientTable;
     QPushButton* m_createBtn;
     QPushButton* m_editBtn;
     QPushButton* m_deleteBtn;
     QPushButton* m_addToFamilyBtn;
+    QCompleter* m_patientNameCompleter;
 };
 
 #endif // PATIENTMANAGEMENTDIALOG_H

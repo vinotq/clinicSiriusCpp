@@ -5,6 +5,8 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QIcon>
+#include <QSize>
 
 AddByCodeDialog::AddByCodeDialog(int patientId, QWidget *parent)
     : QDialog(parent), patientId(patientId), headPatientId(-1) {
@@ -18,7 +20,7 @@ void AddByCodeDialog::setupUI() {
 
     // Инструкция
     QLabel *instructionLabel = new QLabel("Введите 6-символный код для присоединения к семье:");
-    instructionLabel->setStyleSheet("color: #666; font-size: 11pt;");
+    instructionLabel->setProperty("class", "muted-text");
     mainLayout->addWidget(instructionLabel);
 
     mainLayout->addSpacing(12);
@@ -28,25 +30,29 @@ void AddByCodeDialog::setupUI() {
     codeInput = new QLineEdit();
     codeInput->setMaxLength(6);
     codeInput->setPlaceholderText("Введите 6-символный код");
+    codeInput->setInputMask("AAAAAA");
     codeInput->setAlignment(Qt::AlignCenter);
-    codeInput->setStyleSheet("font-size: 14pt; letter-spacing: 2px; font-weight: bold;");
+    codeInput->setProperty("class", "invitation-code-input");
+    // Focus на поле ввода для быстрого ввода кода
+    codeInput->setFocus();
 
     mainLayout->addWidget(codeLabel);
     mainLayout->addWidget(codeInput);
 
     mainLayout->addSpacing(12);
 
-    // Сообщение об ошибке
-    errorLabel = new QLabel();
-    errorLabel->setStyleSheet("color: #ef4444; font-weight: bold;");
-    errorLabel->hide();
-    mainLayout->addWidget(errorLabel);
+    // Статус сообщение
+    statusLabel = new QLabel();
+    statusLabel->setProperty("class", "status-label");
+    statusLabel->hide();
+    mainLayout->addWidget(statusLabel);
 
     mainLayout->addStretch();
 
     // Кнопки
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    addButton = new QPushButton("✓ Присоединиться");
+    addButton = new QPushButton("Присоединиться");
+    addButton->setText(QString::fromUtf8("✅ ") + addButton->text());
     addButton->setMinimumHeight(36);
     QPushButton *cancelButton = new QPushButton("Отмена");
     cancelButton->setMinimumHeight(36);
@@ -65,19 +71,21 @@ void AddByCodeDialog::setupUI() {
 void AddByCodeDialog::onAddClicked() {
     QString code = codeInput->text().toUpper().trimmed();
 
-    errorLabel->hide();
+    statusLabel->hide();
 
     // Проверка пустого поля
     if (code.isEmpty()) {
-        errorLabel->setText("Введите код приглашения");
-        errorLabel->show();
+        statusLabel->setText("Введите код приглашения");
+        statusLabel->setProperty("class", "status-label error");
+        statusLabel->show();
         return;
     }
 
     // Проверка длины кода
     if (code.length() != 6) {
-        errorLabel->setText("Код должен содержать ровно 6 символов");
-        errorLabel->show();
+        statusLabel->setText("Код должен содержать ровно 6 символов");
+        statusLabel->setProperty("class", "status-label error");
+        statusLabel->show();
         return;
     }
 
@@ -85,22 +93,25 @@ void AddByCodeDialog::onAddClicked() {
     InvitationCode ic = dataManager.getInvitationCodeByCode(code);
     
     if (ic.id == 0) {
-        errorLabel->setText("Код приглашения не найден");
-        errorLabel->show();
+        statusLabel->setText("Код приглашения не найден");
+        statusLabel->setProperty("class", "status-label error");
+        statusLabel->show();
         return;
     }
 
     if (ic.used) {
-        errorLabel->setText("Этот код уже использован");
-        errorLabel->show();
+        statusLabel->setText("Этот код уже использован");
+        statusLabel->setProperty("class", "status-label error");
+        statusLabel->show();
         return;
     }
 
     // Проверить, что пациент не состоит уже в какой-то семье
     QList<PatientGroup> existingFamilies = dataManager.getPatientFamilyMembers(patientId);
     if (!existingFamilies.isEmpty()) {
-        errorLabel->setText("Вы уже состоите в семье. Нельзя состоять в нескольких семьях.");
-        errorLabel->show();
+        statusLabel->setText("Вы уже состоите в семье. Нельзя состоять в нескольких семьях.");
+        statusLabel->setProperty("class", "status-label error");
+        statusLabel->show();
         return;
     }
 
@@ -111,8 +122,9 @@ void AddByCodeDialog::onAddClicked() {
     if (!familyMembers.isEmpty()) {
         // Проверяем, что глава семьи совпадает с id_parent кода
         if (familyMembers.first().family_head != ic.id_parent) {
-            errorLabel->setText("Ошибка: этот код генерирован не главой семьи");
-            errorLabel->show();
+            statusLabel->setText("Ошибка: этот код генерирован не главой семьи");
+            statusLabel->setProperty("class", "status-label error");
+            statusLabel->show();
             return;
         }
     }
@@ -131,8 +143,12 @@ void AddByCodeDialog::onAddClicked() {
 
     headPatientId = ic.id_parent;
     Patient headPatient = dataManager.getPatientById(ic.id_parent);
+    
+    statusLabel->setText("✓ Вы успешно присоединились к семье!");
+    statusLabel->setProperty("class", "status-label success");
+    statusLabel->show();
+    
     emit patientAdded(ic.id_parent, headPatient.fullName());
     
-    QMessageBox::information(this, "Успешно", "Вы успешно присоединились к семье!");
     accept();
 }
