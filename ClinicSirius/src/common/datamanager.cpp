@@ -92,7 +92,12 @@ QJsonArray DataManager::loadJson(const QString& filename) const {
 }
 
 void DataManager::saveJson(const QString& filename, const QJsonArray& data) {
-    QString filePath = dataPath + "/" + filename;
+    QDir dir(dataPath);
+    if (!dir.exists()) {
+        dir.mkpath("."); // Ensure data directory exists before writing
+    }
+
+    QString filePath = dir.filePath(filename);
     QFile file(filePath);
 
     if (!file.open(QIODevice::WriteOnly)) {
@@ -168,8 +173,10 @@ void DataManager::deletePatient(int id) {
             // Also remove appointments
             QJsonArray apArray = loadJson("appointment.json");
             for (int j = apArray.size() - 1; j >= 0; --j) {
-                if (apArray[j].toObject()["id_patient"].toInt() == id) {
-                    int apId = apArray[j].toObject()["id_ap"].toInt();
+                QJsonObject apObj = apArray[j].toObject();
+                if (apObj["id_patient"].toInt() == id) {
+                    int apId = apObj["id_ap"].toInt();
+                    int scheduleId = apObj["id_ap_sch"].toInt(-1);
                     apArray.removeAt(j);
 
                     // Remove recipe if exists
@@ -180,6 +187,20 @@ void DataManager::deletePatient(int id) {
                         }
                     }
                     saveJson("recipe.json", recipeArray);
+
+                    // Free linked schedule slot
+                    if (scheduleId > 0) {
+                        QJsonArray scheduleArray = loadJson("appointment_schedule.json");
+                        for (int s = 0; s < scheduleArray.size(); ++s) {
+                            QJsonObject schObj = scheduleArray[s].toObject();
+                            if (schObj["id_ap_sch"].toInt() == scheduleId) {
+                                schObj["status"] = "free";
+                                scheduleArray[s] = schObj;
+                                break;
+                            }
+                        }
+                        saveJson("appointment_schedule.json", scheduleArray);
+                    }
                 }
             }
             saveJson("appointment.json", apArray);
@@ -287,6 +308,28 @@ Specialization DataManager::getSpecializationById(int id) const {
     return Specialization();
 }
 
+void DataManager::updateSpecialization(const Specialization& spec) {
+    QJsonArray array = loadJson("specialization.json");
+    for (int i = 0; i < array.size(); ++i) {
+        Specialization cur = Specialization::fromJson(array[i].toObject());
+        if (cur.id_spec == spec.id_spec) {
+            array[i] = spec.toJson();
+            saveJson("specialization.json", array);
+            return;
+        }
+    }
+}
+
+bool DataManager::isSpecializationUsed(int id) const {
+    QJsonArray doctors = loadJson("doctor.json");
+    for (const QJsonValue& v : doctors) {
+        if (v.toObject()["id_spec"].toInt() == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Room operations
 QList<Room> DataManager::getAllRooms() const {
     QList<Room> rooms;
@@ -308,6 +351,28 @@ Room DataManager::getRoomById(int id) const {
         }
     }
     return Room();
+}
+
+void DataManager::updateRoom(const Room& room) {
+    QJsonArray array = loadJson("room.json");
+    for (int i = 0; i < array.size(); ++i) {
+        Room cur = Room::fromJson(array[i].toObject());
+        if (cur.id_room == room.id_room) {
+            array[i] = room.toJson();
+            saveJson("room.json", array);
+            return;
+        }
+    }
+}
+
+bool DataManager::isRoomUsed(int id) const {
+    QJsonArray schedules = loadJson("appointment_schedule.json");
+    for (const QJsonValue& v : schedules) {
+        if (v.toObject()["id_room"].toInt() == id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // Appointment operations
@@ -369,7 +434,9 @@ void DataManager::deleteAppointment(int id) {
     QJsonArray array = loadJson("appointment.json");
 
     for (int i = 0; i < array.size(); ++i) {
-        if (array[i].toObject()["id_ap"].toInt() == id) {
+        QJsonObject obj = array[i].toObject();
+        if (obj["id_ap"].toInt() == id) {
+            int scheduleId = obj["id_ap_sch"].toInt(-1);
             array.removeAt(i);
             saveJson("appointment.json", array);
 
@@ -381,6 +448,20 @@ void DataManager::deleteAppointment(int id) {
                 }
             }
             saveJson("recipe.json", recipeArray);
+
+            // Free the corresponding schedule slot if it exists
+            if (scheduleId > 0) {
+                QJsonArray scheduleArray = loadJson("appointment_schedule.json");
+                for (int s = 0; s < scheduleArray.size(); ++s) {
+                    QJsonObject schObj = scheduleArray[s].toObject();
+                    if (schObj["id_ap_sch"].toInt() == scheduleId) {
+                        schObj["status"] = "free";
+                        scheduleArray[s] = schObj;
+                        break;
+                    }
+                }
+                saveJson("appointment_schedule.json", scheduleArray);
+            }
             return;
         }
     }
@@ -637,6 +718,28 @@ int DataManager::getNextDiagnosisId() const {
         if (id > maxId) maxId = id;
     }
     return maxId + 1;
+}
+
+void DataManager::updateDiagnosis(const Diagnosis& diagnosis) {
+    QJsonArray array = loadJson("diagnosis.json");
+    for (int i = 0; i < array.size(); ++i) {
+        Diagnosis cur = Diagnosis::fromJson(array[i].toObject());
+        if (cur.id_diagnosis == diagnosis.id_diagnosis) {
+            array[i] = diagnosis.toJson();
+            saveJson("diagnosis.json", array);
+            return;
+        }
+    }
+}
+
+bool DataManager::isDiagnosisUsed(int id) const {
+    QJsonArray recipes = loadJson("recipe.json");
+    for (const QJsonValue& v : recipes) {
+        if (v.toObject()["id_diagnosis"].toInt() == id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 QList<Appointment> DataManager::getAppointmentsByDoctor(int doctorId) const {

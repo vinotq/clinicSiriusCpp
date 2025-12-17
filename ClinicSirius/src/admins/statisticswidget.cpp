@@ -118,12 +118,14 @@ public:
         header->addStretch();
         upBtn = new QPushButton();
         downBtn = new QPushButton();
-        upBtn->setText("⬆️");
+        upBtn->setIcon(QIcon(":/images/icon-arrow-up.svg"));
         upBtn->setIconSize(QSize(14,14));
-        downBtn->setText("⬇️");
+        upBtn->setToolTip("Переместить выше");
+        downBtn->setIcon(QIcon(":/images/icon-arrow-down.svg"));
         downBtn->setIconSize(QSize(14,14));
-        upBtn->setFixedSize(28,24);
-        downBtn->setFixedSize(28,24);
+        downBtn->setToolTip("Переместить ниже");
+        upBtn->setFixedSize(32,24);
+        downBtn->setFixedSize(32,24);
         header->addWidget(upBtn);
         header->addWidget(downBtn);
         l->addLayout(header);
@@ -196,13 +198,19 @@ void StatisticsWidget::buildUI() {
     // Header with period label and navigation
     QHBoxLayout *header = new QHBoxLayout();
     prevBtn = new QPushButton();
-    prevBtn->setText("⬅️");
+    prevBtn->setIcon(QIcon(":/images/icon-arrow-left.svg"));
     prevBtn->setIconSize(QSize(16,16));
+    prevBtn->setToolTip("Предыдущий период");
+    prevBtn->setFixedWidth(36);
     nextBtn = new QPushButton();
-    nextBtn->setText("➡️");
+    nextBtn->setIcon(QIcon(":/images/icon-arrow-right.svg"));
     nextBtn->setIconSize(QSize(16,16));
+    nextBtn->setToolTip("Следующий период");
+    nextBtn->setFixedWidth(36);
     periodLabel = new QLabel();
-    choosePeriodBtn = new QPushButton("📆 Выбрать период");
+    choosePeriodBtn = new QPushButton("Выбрать период");
+    choosePeriodBtn->setIcon(QIcon(":/images/icon-calendar.svg"));
+    choosePeriodBtn->setIconSize(QSize(16,16));
     header->addWidget(prevBtn);
     header->addWidget(periodLabel);
     header->addWidget(nextBtn);
@@ -221,10 +229,10 @@ void StatisticsWidget::buildUI() {
     {
 #ifdef USE_QT_CHARTS
     // create inner chart views and wrap them with resizable wrappers
-    // Set sizes to ensure vertical scroll is needed (each chart > 400px height)
+    // Set sizes to ensure vertical scroll is needed (each chart > 450px height)
     QChartView *innerVisits = new QChartView(new QChart());
-    innerVisits->setMinimumHeight(450);
-    innerVisits->setMinimumWidth(800);
+    innerVisits->setMinimumHeight(520);
+    innerVisits->setMinimumWidth(920);
     visitsChartView = new ResizableWidget(innerVisits, false, "Посещения по неделям");
     static_cast<ResizableWidget*>(visitsChartView)->setMoveCallback([this](int dir){ this->moveChart(static_cast<QWidget*>(visitsChartView), dir); });
 
@@ -233,15 +241,15 @@ void StatisticsWidget::buildUI() {
     doctorsChartView = nullptr;
 
     QChartView *innerTopPatients = new QChartView(new QChart());
-    innerTopPatients->setMinimumHeight(400);
-    innerTopPatients->setMinimumWidth(600);
+    innerTopPatients->setMinimumHeight(470);
+    innerTopPatients->setMinimumWidth(680);
     // pies should only be allowed to grow, not shrink
     topPatientsChartView = new ResizableWidget(innerTopPatients, false, "Топ пациентов");
     static_cast<ResizableWidget*>(topPatientsChartView)->setMoveCallback([this](int dir){ this->moveChart(static_cast<QWidget*>(topPatientsChartView), dir); });
 
     QChartView *innerTopDoctors = new QChartView(new QChart());
-    innerTopDoctors->setMinimumHeight(400);
-    innerTopDoctors->setMinimumWidth(600);
+    innerTopDoctors->setMinimumHeight(470);
+    innerTopDoctors->setMinimumWidth(680);
     topDoctorsChartView = new ResizableWidget(innerTopDoctors, false, "Топ врачей");
     static_cast<ResizableWidget*>(topDoctorsChartView)->setMoveCallback([this](int dir){ this->moveChart(static_cast<QWidget*>(topDoctorsChartView), dir); });
 #else
@@ -270,7 +278,9 @@ void StatisticsWidget::buildUI() {
 
     // Footer with refresh only (suggestions removed)
     QHBoxLayout *footer = new QHBoxLayout();
-    QPushButton *refreshBtn = new QPushButton("🔄 Обновить данные");
+    QPushButton *refreshBtn = new QPushButton("Обновить данные");
+    refreshBtn->setIcon(QIcon(":/images/icon-refresh.svg"));
+    refreshBtn->setIconSize(QSize(16,16));
     footer->addWidget(refreshBtn);
     footer->addStretch();
     main->addLayout(footer);
@@ -616,10 +626,13 @@ void StatisticsWidget::buildTopLists() {
                     if (v) {
                         v->setChart(chart);
                         v->setRenderHint(QPainter::Antialiasing);
-                        // enable hover tooltips for pie slices
+                        // enable hover tooltips + подсветка как у диаграммы врачей
                         for (QPieSlice *s : ps->slices()) {
+                            s->setLabelVisible(false);
                             connect(s, &QPieSlice::hovered, this, [=](bool state){
-                                if (!state) return;
+                                s->setLabelVisible(state);
+                                s->setExploded(state);
+                                if (!state) { QToolTip::hideText(); return; }
                                 QString txt = QString("%1 — %2 приёмов").arg(s->label()).arg((int)s->value());
                                 QToolTip::showText(QCursor::pos(), txt);
                             });

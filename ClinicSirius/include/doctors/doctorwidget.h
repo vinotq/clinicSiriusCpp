@@ -32,6 +32,7 @@ private slots:
     void onSettingsClicked();
 
     void onCellClicked(int row, int column);
+    void onCellDoubleClicked(int row, int column);
     void loadSchedule();
     void onBackFromSchedule();
     void onPrevWeek();

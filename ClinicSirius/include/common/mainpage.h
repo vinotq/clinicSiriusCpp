@@ -10,6 +10,7 @@
 #include <QToolButton>
 #include <QMenu>
 #include "models.h"
+#include "datamanager.h"
 
 class ProfileWidget;
 class DoctorWidget;
@@ -57,6 +58,7 @@ private:
     void showDoctorProfile(bool openSettingsTab = false);
     void showHome();
     void showBooking();
+    void showUpcomingAppointments();
 
     QPushButton *logoButton;
     QToolButton *userMenuButton;

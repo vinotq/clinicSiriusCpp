@@ -8,6 +8,8 @@
 #include <QDateTime>
 #include <QMessageBox>
 #include <QMenu>
+#include <QIcon>
+#include <QSize>
 #include "patients/appointmentbookingwidget.h"
 
 RoomScheduleViewer::RoomScheduleViewer(QWidget *parent)
@@ -43,10 +45,16 @@ void RoomScheduleViewer::buildUI() {
 
     // Week navigation
     QHBoxLayout *nav = new QHBoxLayout();
-    m_prevBtn = new QPushButton("←");
+    m_prevBtn = new QPushButton();
+    m_prevBtn->setIcon(QIcon(":/images/icon-arrow-left.svg"));
+    m_prevBtn->setIconSize(QSize(16, 16));
     m_prevBtn->setFixedWidth(40);
-    m_nextBtn = new QPushButton("→");
+    m_prevBtn->setToolTip("Предыдущая неделя");
+    m_nextBtn = new QPushButton();
+    m_nextBtn->setIcon(QIcon(":/images/icon-arrow-right.svg"));
+    m_nextBtn->setIconSize(QSize(16, 16));
     m_nextBtn->setFixedWidth(40);
+    m_nextBtn->setToolTip("Следующая неделя");
     m_weekLabel = new QLabel();
     m_weekLabel->setAlignment(Qt::AlignCenter);
     m_todayBtn = new QPushButton("Сегодня");
@@ -119,7 +127,8 @@ void RoomScheduleViewer::buildUI() {
             msgBox.setText(detailMsg);
             msgBox.setIcon(QMessageBox::Information);
             
-            QPushButton *rescheduleBtn = msgBox.addButton("⏩ Перенести", QMessageBox::ActionRole);
+            QPushButton *rescheduleBtn = new QPushButton(QIcon(":/images/icon-refresh.svg"), "Перенести");
+            msgBox.addButton(rescheduleBtn, QMessageBox::ActionRole);
             QPushButton *cancelBtn = msgBox.addButton("Отменить", QMessageBox::DestructiveRole);
             QPushButton *closeBtn = msgBox.addButton("Закрыть", QMessageBox::RejectRole);
             

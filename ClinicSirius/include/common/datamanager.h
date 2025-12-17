@@ -28,9 +28,13 @@ public:
     
     QList<Specialization> getAllSpecializations() const;
     Specialization getSpecializationById(int id) const;
+    void updateSpecialization(const Specialization& spec);
+    bool isSpecializationUsed(int id) const;
     
     QList<Room> getAllRooms() const;
     Room getRoomById(int id) const;
+    void updateRoom(const Room& room);
+    bool isRoomUsed(int id) const;
     
     QList<Appointment> getAllAppointments() const;
     QList<Appointment> getPatientAppointments(int patientId) const;
@@ -96,6 +100,8 @@ public:
     void deleteRoom(int id);
     int getNextRoomId() const;
     
+    void updateDiagnosis(const Diagnosis& diagnosis);
+    bool isDiagnosisUsed(int id) const;
     void deleteDiagnosis(int id);
     
     bool adminLogin(int id, const QString& password) const;

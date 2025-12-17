@@ -30,7 +30,18 @@ SpecialtyCard::SpecialtyCard(int id, const QString& name, QWidget* parent)
 
 void SpecialtyCard::setupUI() {
     QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(15, 15, 15, 15);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(10);
+
+    QLabel* iconLabel = new QLabel();
+    iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setFixedSize(48, 48);
+    QString iconPath = QString(":/images/icon-spec-%1.svg").arg((m_id % 10 == 0) ? 10 : (m_id % 10));
+    QPixmap pm = QIcon(iconPath).pixmap(QSize(28, 28));
+    if (!pm.isNull()) {
+        iconLabel->setPixmap(pm);
+    }
+    layout->addWidget(iconLabel);
 
     QLabel* titleLabel = new QLabel(m_name);
     QFont font;
@@ -58,12 +69,13 @@ DoctorCard::DoctorCard(int id, const QString& name, QWidget* parent)
 
 void DoctorCard::setupUI() {
     QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(15, 15, 15, 15);
+    layout->setContentsMargins(12, 12, 12, 12);
 
-    QLabel* iconLabel = new QLabel("👩\u200D⚕️");
+    QLabel* iconLabel = new QLabel();
     iconLabel->setProperty("class", "doctor-card-icon");
-    QFont ic; ic.setPointSize(20); iconLabel->setFont(ic);
     iconLabel->setAlignment(Qt::AlignCenter);
+    iconLabel->setFixedSize(52, 52);
+    iconLabel->setPixmap(QIcon(":/images/icon-user.svg").pixmap(QSize(26, 26)));
 
     QLabel* nameLabel = new QLabel(m_name);
     QFont nameFont;
@@ -135,8 +147,10 @@ void AppointmentBookingWidget::setupUI() {
     mainLayout->setContentsMargins(30, 20, 30, 20);
 
     QHBoxLayout* headerLayout = new QHBoxLayout();
-    m_backButton = new QPushButton("⬅️ Назад");
-    m_backButton->setMaximumWidth(100);
+    m_backButton = new QPushButton("Назад");
+    m_backButton->setIcon(QIcon(":/images/icon-arrow-left.svg"));
+    m_backButton->setIconSize(QSize(16, 16));
+    m_backButton->setMaximumWidth(130);
     m_backButton->setProperty("class", "back-button");
     m_titleLabel = new QLabel("Запись к врачу");
     m_titleLabel->setProperty("class", "page-title");
@@ -175,6 +189,23 @@ void AppointmentBookingWidget::setupUI() {
     specialtyLayout->addLayout(specialtyGridLayout);
     specialtyLayout->addStretch();
 
+    QHBoxLayout* specialtyButtonLayout = new QHBoxLayout();
+    QPushButton* specialtyOkButton = new QPushButton("Далее");
+    specialtyOkButton->setIcon(QIcon(":/images/icon-arrow-right.svg"));
+    specialtyOkButton->setIconSize(QSize(16, 16));
+    specialtyOkButton->setObjectName("specialtyOkButton");
+    specialtyOkButton->setMinimumHeight(45);
+    QPushButton* specialtyCancelButton = new QPushButton("Отмена");
+    specialtyCancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    specialtyCancelButton->setIconSize(QSize(16, 16));
+    specialtyCancelButton->setObjectName("specialtyCancelButton");
+    specialtyCancelButton->setMinimumHeight(45);
+    specialtyButtonLayout->addStretch();
+    specialtyButtonLayout->addWidget(specialtyOkButton);
+    specialtyButtonLayout->addWidget(specialtyCancelButton);
+    specialtyButtonLayout->setSpacing(10);
+    specialtyLayout->addLayout(specialtyButtonLayout);
+
     QScrollArea* specialtyScroll = new QScrollArea();
     specialtyScroll->setWidget(specialtyPage);
     specialtyScroll->setWidgetResizable(true);
@@ -187,9 +218,30 @@ void AppointmentBookingWidget::setupUI() {
     doctorLayout->addWidget(new QLabel("Выберите врача:"));
     QGridLayout* doctorGridLayout = new QGridLayout();
     doctorGridLayout->setSpacing(15);
+    doctorGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    doctorGridLayout->setColumnStretch(0, 1);
+    doctorGridLayout->setColumnStretch(1, 1);
+    doctorGridLayout->setColumnStretch(2, 1);
     doctorGridLayout->setObjectName("doctorGridLayout");
     doctorLayout->addLayout(doctorGridLayout);
     doctorLayout->addStretch();
+
+    QHBoxLayout* doctorButtonLayout = new QHBoxLayout();
+    QPushButton* doctorOkButton = new QPushButton("Далее");
+    doctorOkButton->setIcon(QIcon(":/images/icon-arrow-right.svg"));
+    doctorOkButton->setIconSize(QSize(16, 16));
+    doctorOkButton->setObjectName("doctorOkButton");
+    doctorOkButton->setMinimumHeight(45);
+    QPushButton* doctorCancelButton = new QPushButton("Отмена");
+    doctorCancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    doctorCancelButton->setIconSize(QSize(16, 16));
+    doctorCancelButton->setObjectName("doctorCancelButton");
+    doctorCancelButton->setMinimumHeight(45);
+    doctorButtonLayout->addStretch();
+    doctorButtonLayout->addWidget(doctorOkButton);
+    doctorButtonLayout->addWidget(doctorCancelButton);
+    doctorButtonLayout->setSpacing(10);
+    doctorLayout->addLayout(doctorButtonLayout);
 
     QScrollArea* doctorScroll = new QScrollArea();
     doctorScroll->setWidget(doctorPage);
@@ -222,21 +274,151 @@ void AppointmentBookingWidget::setupUI() {
     slotLayout->addLayout(dateTimeLayout);
 
     QHBoxLayout* slotButtonLayout = new QHBoxLayout();
-    QPushButton* slotOkButton = new QPushButton("✅ Выбрать");
+    QPushButton* slotOkButton = new QPushButton("Выбрать");
+    slotOkButton->setIcon(QIcon(":/images/icon-check.svg"));
+    slotOkButton->setIconSize(QSize(16, 16));
     slotOkButton->setObjectName("slotOkButton");
-    QPushButton* slotCancelButton = new QPushButton("❌ Отмена");
+    slotOkButton->setMinimumHeight(45);
+    QPushButton* slotCancelButton = new QPushButton("Отмена");
+    slotCancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    slotCancelButton->setIconSize(QSize(16, 16));
     slotCancelButton->setObjectName("slotCancelButton");
+    slotCancelButton->setMinimumHeight(45);
     slotButtonLayout->addStretch();
     slotButtonLayout->addWidget(slotOkButton);
     slotButtonLayout->addWidget(slotCancelButton);
+    slotButtonLayout->setSpacing(10);
     slotLayout->addLayout(slotButtonLayout);
 
     m_stackedWidget->addWidget(slotPage);
+
+    // Patient selection page (page 3)
+    QWidget* patientPage = new QWidget();
+    QVBoxLayout* patientLayout = new QVBoxLayout(patientPage);
+    patientLayout->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout* patientHeaderLayout = new QHBoxLayout();
+    QLabel* patientLabel = new QLabel("Выберите пациента:");
+    QPushButton* addPatientButton = new QPushButton("Создать пациента");
+    addPatientButton->setIcon(QIcon(":/images/icon-add.svg"));
+    addPatientButton->setIconSize(QSize(16,16));
+    addPatientButton->setMinimumHeight(32);
+    addPatientButton->setProperty("class", "hero-outline-btn");
+    patientHeaderLayout->addWidget(patientLabel);
+    patientHeaderLayout->addStretch();
+    patientHeaderLayout->addWidget(addPatientButton);
+    patientLayout->addLayout(patientHeaderLayout);
+    QListWidget* patientsList = new QListWidget();
+    patientsList->setObjectName("patientsList");
+    patientLayout->addWidget(patientsList);
+
+    QHBoxLayout* patientButtonLayout = new QHBoxLayout();
+    QPushButton* patientOkButton = new QPushButton("Выбрать");
+    patientOkButton->setIcon(QIcon(":/images/icon-check.svg"));
+    patientOkButton->setIconSize(QSize(16, 16));
+    patientOkButton->setObjectName("patientOkButton");
+    patientOkButton->setMinimumHeight(45);
+    QPushButton* patientCancelButton = new QPushButton("Отмена");
+    patientCancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    patientCancelButton->setIconSize(QSize(16, 16));
+    patientCancelButton->setObjectName("patientCancelButton");
+    patientCancelButton->setMinimumHeight(45);
+    patientButtonLayout->addStretch();
+    patientButtonLayout->addWidget(patientOkButton);
+    patientButtonLayout->addWidget(patientCancelButton);
+    patientButtonLayout->setSpacing(10);
+    patientLayout->addLayout(patientButtonLayout);
+
+    m_stackedWidget->addWidget(patientPage);
 
     mainLayout->addLayout(headerLayout);
     mainLayout->addWidget(m_stackedWidget);
 
     connect(m_backButton, &QPushButton::clicked, this, &AppointmentBookingWidget::onBackClicked);
+
+    // Connect specialty page buttons
+    QWidget* specPageWidget = m_stackedWidget->widget(0);
+    QScrollArea* specPageScroll = qobject_cast<QScrollArea*>(specPageWidget);
+    if (specPageScroll) {
+        auto scrolledWidget = specPageScroll->widget();
+        auto specialtyOkButton = scrolledWidget->findChild<QPushButton*>("specialtyOkButton");
+        auto specialtyCancelButton = scrolledWidget->findChild<QPushButton*>("specialtyCancelButton");
+        if (specialtyOkButton && specialtyCancelButton) {
+            connect(specialtyOkButton, &QPushButton::clicked, this, [this]() {
+                if (m_selectedSpecialtyId > 0) {
+                    onSpecialtySelected(m_selectedSpecialtyId);
+                }
+            });
+            connect(specialtyCancelButton, &QPushButton::clicked, this, [this]() {
+                resetBooking();
+                close();
+            });
+        }
+    }
+
+    // Connect doctor page buttons
+    QWidget* docPageWidget = m_stackedWidget->widget(1);
+    QScrollArea* docPageScroll = qobject_cast<QScrollArea*>(docPageWidget);
+    if (docPageScroll) {
+        auto scrolledWidget = docPageScroll->widget();
+        auto doctorOkButton = scrolledWidget->findChild<QPushButton*>("doctorOkButton");
+        auto doctorCancelButton = scrolledWidget->findChild<QPushButton*>("doctorCancelButton");
+        if (doctorOkButton && doctorCancelButton) {
+            connect(doctorOkButton, &QPushButton::clicked, this, [this]() {
+                if (m_selectedDoctorId > 0) {
+                    onDoctorSelected(m_selectedDoctorId);
+                }
+            });
+            connect(doctorCancelButton, &QPushButton::clicked, this, &AppointmentBookingWidget::onBackClicked);
+        }
+    }
+
+    // Connect patient page buttons
+    QWidget* patientPageWidget = m_stackedWidget->widget(3);
+    auto patientPgOkBtn = patientPageWidget->findChild<QPushButton*>("patientOkButton");
+    auto patientPgCancelBtn = patientPageWidget->findChild<QPushButton*>("patientCancelButton");
+    if (patientPgOkBtn && patientPgCancelBtn) {
+        connect(patientPgOkBtn, &QPushButton::clicked, this, [this]() {
+            auto patientPageWidget = m_stackedWidget->widget(3);
+            auto patientsList = patientPageWidget->findChild<QListWidget*>("patientsList");
+            auto item = patientsList->currentItem();
+            if (!item) {
+                QMessageBox::warning(this, "Ошибка", "Выберите пациента");
+                return;
+            }
+            int patientId = item->data(Qt::UserRole).toInt();
+            m_selectedPatient = m_dataManager.getPatientById(patientId);
+            if (m_selectedPatient.id_patient > 0) {
+                showConfirmation();
+            }
+        });
+        connect(patientPgCancelBtn, &QPushButton::clicked, this, &AppointmentBookingWidget::onBackClicked);
+    }
+
+    // Создать пациента прямо из выбора
+    connect(addPatientButton, &QPushButton::clicked, this, [this, patientsList]() {
+        CreatePatientDialog dlg(this);
+        if (dlg.exec() == QDialog::Accepted) {
+            Patient p = dlg.getCreatedPatient();
+            if (p.id_patient > 0) {
+                m_dataManager.addPatient(p);
+
+                // Автодобавление в семью текущего пациента (если инициатор — пациент)
+                if (m_currentUser.type == LoginUser::PATIENT && m_currentUser.id > 0) {
+                    PatientGroup pg;
+                    pg.id_patient_group = m_dataManager.getNextPatientGroupId();
+                    pg.id_parent = m_currentUser.id;
+                    pg.id_child = p.id_patient;
+                    pg.family_head = m_currentUser.id;
+                    m_dataManager.addFamilyMember(pg);
+                }
+
+                auto item = new QListWidgetItem(p.fullName());
+                item->setData(Qt::UserRole, p.id_patient);
+                patientsList->addItem(item);
+                patientsList->setCurrentItem(item);
+            }
+        }
+    });
 
     m_stackedWidget->setCurrentIndex(0);
 }
@@ -247,7 +429,12 @@ void AppointmentBookingWidget::onSpecialtySelected(int specialtyId) {
     m_progressLabel->setText("Шаг 2/5");
 
     auto doctorPage = m_stackedWidget->widget(1);
-    auto doctorGridLayout = doctorPage->findChild<QGridLayout*>("doctorGridLayout");
+    auto doctorScroll = qobject_cast<QScrollArea*>(doctorPage);
+    if (!doctorScroll) return;
+    
+    auto scrolledWidget = doctorScroll->widget();
+    auto doctorGridLayout = scrolledWidget->findChild<QGridLayout*>("doctorGridLayout");
+    if (!doctorGridLayout) return;
 
     QLayoutItem* item;
     while ((item = doctorGridLayout->takeAt(0)) != nullptr) {
@@ -302,6 +489,16 @@ void AppointmentBookingWidget::showSlotSelection() {
     
     QSet<QDate> datesWithSlots;
 
+    if (availableSchedules.isEmpty()) {
+        QMessageBox::information(this, "Нет свободных слотов",
+                                 "У выбранного врача сейчас нет доступных приёмов. "
+                                 "Попробуйте выбрать другого врача или вернитесь позже.");
+        m_stackedWidget->setCurrentIndex(1);
+        m_titleLabel->setText("Выбор врача");
+        m_progressLabel->setText("Шаг 2/5");
+        return;
+    }
+
     for (const auto& schedule : availableSchedules) {
         datesWithSlots.insert(schedule.time_from.date());
         qDebug() << "  Adding date:" << schedule.time_from.date().toString("yyyy-MM-dd") << "Time:" << schedule.time_from.toString("HH:mm");
@@ -309,8 +506,31 @@ void AppointmentBookingWidget::showSlotSelection() {
 
     qDebug() << "Total dates with slots:" << datesWithSlots.size();
     
+    calendar->reset();
     calendar->setMinimumDate(QDate::currentDate());
     calendar->setAvailableDates(datesWithSlots);
+
+    // Select the first available date >= current date
+    if (!datesWithSlots.isEmpty()) {
+        QDate currentDate = QDate::currentDate();
+        QDate firstValidDate;
+        
+        for (const auto& date : datesWithSlots) {
+            if (date >= currentDate) {
+                if (!firstValidDate.isValid() || date < firstValidDate) {
+                    firstValidDate = date;
+                }
+            }
+        }
+        
+        if (firstValidDate.isValid()) {
+            calendar->setSelectedDate(firstValidDate);
+        } else {
+            calendar->setSelectedDate(QDate::currentDate());
+        }
+    } else {
+        calendar->setSelectedDate(QDate::currentDate());
+    }
 
     auto loadSlots = [this, slotsList, availableSchedules](const QDate& date) {
         slotsList->clear();
@@ -465,21 +685,19 @@ void AppointmentBookingWidget::showPatientSelection() {
         std::sort(availablePatients.begin(), availablePatients.end(), [](const Patient &a, const Patient &b){ return a.fullName().toLower() < b.fullName().toLower(); });
     }
 
-    PatientSelectionDialog dlg(this, availablePatients);
-    if (dlg.exec() == QDialog::Accepted) {
-        m_selectedPatient = dlg.getSelectedPatient();
-        if (m_selectedPatient.id_patient > 0) {
-            showConfirmation();
-        } else {
-            onBackClicked();
-        }
-    } else {
-        if (m_isFromManager) {
-            close();
-        } else {
-            onBackClicked();
+    // Fill the patients list
+    auto patientPageWidget = m_stackedWidget->widget(3);
+    auto patientsList = patientPageWidget->findChild<QListWidget*>("patientsList");
+    if (patientsList) {
+        patientsList->clear();
+        for (const auto& patient : availablePatients) {
+            auto item = new QListWidgetItem(patient.fullName());
+            item->setData(Qt::UserRole, patient.id_patient);
+            patientsList->addItem(item);
         }
     }
+
+    m_stackedWidget->setCurrentIndex(3);
 }
 
 void AppointmentBookingWidget::showConfirmation() {
@@ -566,8 +784,13 @@ void AppointmentBookingWidget::onBackClicked() {
         m_stackedWidget->setCurrentIndex(m_stackedWidget->currentIndex() - 1);
         if (m_stackedWidget->currentIndex() == 0) {
             m_titleLabel->setText("Запись к врачу");
+            m_progressLabel->setText("Шаг 1/5");
         } else if (m_stackedWidget->currentIndex() == 1) {
             m_titleLabel->setText("Выбор врача");
+            m_progressLabel->setText("Шаг 2/5");
+        } else if (m_stackedWidget->currentIndex() == 2) {
+            m_titleLabel->setText("Выбор даты и времени приема");
+            m_progressLabel->setText("Шаг 3/5");
         }
     }
 }
@@ -577,6 +800,11 @@ void AppointmentBookingWidget::resetBooking() {
     m_selectedDoctorId = -1;
     m_selectedScheduleId = -1;
     m_selectedDateTime = QDateTime();
+    m_selectedPatient = Patient();
+    m_isRescheduleMode = false;
+    m_rescheduleAppointmentId = -1;
+    m_oldScheduleId = -1;
     m_stackedWidget->setCurrentIndex(0);
     m_titleLabel->setText("Запись к врачу");
+    m_progressLabel->setText("Шаг 1/5");
 }

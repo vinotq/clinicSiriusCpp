@@ -32,6 +32,7 @@ private slots:
 private:
     void setupUI();
     void applyStyles();
+    void updateScrollSize();
 
     QStackedWidget *stackedWidget;
     LoginWindow *loginWindow;

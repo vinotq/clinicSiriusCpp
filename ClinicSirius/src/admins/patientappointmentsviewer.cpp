@@ -8,6 +8,7 @@
 #include "../patients/appointmentbookingwidget.h"
 #include "../patients/createpatientdialog.h" // CHANGED: Include for patient edit dialog
 #include <QPushButton> // CHANGED: For add button
+#include <QIcon>
 
 // CHANGED: For slot declaration
 void PatientAppointmentsViewer::onAddAppointmentClicked() {
@@ -44,7 +45,9 @@ void PatientAppointmentsViewer::buildUI() {
     main->addWidget(m_header);
 
     // CHANGED: Add create appointment button
-    QPushButton *addBtn = new QPushButton("📅 Создать приём");
+    QPushButton *addBtn = new QPushButton("Создать приём");
+    addBtn->setIcon(QIcon(":/images/icon-calendar.svg"));
+    addBtn->setIconSize(QSize(16,16));
     main->addWidget(addBtn);
     connect(addBtn, &QPushButton::clicked, this, &PatientAppointmentsViewer::onAddAppointmentClicked);
 
@@ -136,9 +139,9 @@ void PatientAppointmentsViewer::onTableContextMenu(const QPoint &pos) {
     if (!found) return;
 
     QMenu menu;
-    QAction *reschedule = menu.addAction("🕒 Перенести приём");
-    QAction *editPatient = menu.addAction("✍️ Редактировать пациента");
-    QAction *cancel = menu.addAction("❌ Отменить запись");
+    QAction *reschedule = menu.addAction(QIcon(":/images/icon-clock.svg"), "Перенести приём");
+    QAction *editPatient = menu.addAction(QIcon(":/images/icon-edit.svg"), "Редактировать пациента");
+    QAction *cancel = menu.addAction(QIcon(":/images/icon-close.svg"), "Отменить запись");
     QAction *selected = menu.exec(m_table->viewport()->mapToGlobal(pos));
     if (!selected) return;
 

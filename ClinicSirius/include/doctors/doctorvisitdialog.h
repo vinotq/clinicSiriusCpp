@@ -19,6 +19,7 @@ public:
     // scheduleId can be -1 when creating new appointment; doctorId is required
     explicit DoctorVisitDialog(int doctorId, int scheduleId = -1, int mode = 0, QWidget *parent = nullptr);
     void setCurrentPatient(int patientId);
+    void setBookingPatient(int patientId, bool lock = false);
 
 signals:
     void appointmentSaved();
@@ -29,6 +30,7 @@ private slots:
     void onFinishVisit();
     void onSelectDoctorForBooking();
     void onCancelBooking();
+    void onRepeatBooking();
 
 private:
     void buildVisitUI();
@@ -52,6 +54,7 @@ private:
     QTextEdit *notesEdit = nullptr;
     QPushButton *saveButton = nullptr;
     QPushButton *finishButton = nullptr;
+    QPushButton *repeatBookButton = nullptr;
 
     // Booking mode widgets
     QComboBox *patientComboBooking = nullptr;

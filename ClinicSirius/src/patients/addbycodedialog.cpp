@@ -51,9 +51,13 @@ void AddByCodeDialog::setupUI() {
 
     // Кнопки
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    addButton = new QPushButton("✅ Присоединиться");
+    addButton = new QPushButton("Присоединиться");
+    addButton->setIcon(QIcon(":/images/icon-check.svg"));
+    addButton->setIconSize(QSize(16, 16));
     addButton->setMinimumHeight(36);
-    QPushButton *cancelButton = new QPushButton("❌ Отмена");
+    QPushButton *cancelButton = new QPushButton("Отмена");
+    cancelButton->setIcon(QIcon(":/images/icon-close.svg"));
+    cancelButton->setIconSize(QSize(16, 16));
     cancelButton->setMinimumHeight(36);
 
     buttonLayout->addStretch();
@@ -107,8 +111,9 @@ void AddByCodeDialog::onAddClicked() {
 
     // Проверить, что пациент не состоит уже в какой-то семье
     QList<PatientGroup> existingFamilies = dataManager.getPatientFamilyMembers(patientId);
-    if (!existingFamilies.isEmpty()) {
-        statusLabel->setText("Вы уже состоите в семье. Нельзя состоять в нескольких семьях.");
+    QList<PatientGroup> existingAsChild = dataManager.getPatientParents(patientId);
+    if (!existingFamilies.isEmpty() || !existingAsChild.isEmpty()) {
+        statusLabel->setText("Вы уже состоите в семье и не можете присоединиться к другой.");
         statusLabel->setProperty("class", "status-label error");
         statusLabel->show();
         return;

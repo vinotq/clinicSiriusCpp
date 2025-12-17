@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QIcon>
 #include <QCoreApplication>
+#include <QTimer>
 
 AuthWindow::AuthWindow(QWidget *parent)
     : QMainWindow(parent), currentUserId(-1), currentUserType(-1)
@@ -55,6 +56,7 @@ void AuthWindow::setupUI() {
     
     // По умолчанию показываем окно входа
     stackedWidget->setCurrentWidget(loginWindow);
+    QTimer::singleShot(0, this, &AuthWindow::updateScrollSize);
 }
 
 void AuthWindow::applyStyles() {
@@ -111,10 +113,12 @@ void AuthWindow::onLoginSuccess(int userId, int userType) {
 
 void AuthWindow::onSwitchToRegistration() {
     stackedWidget->setCurrentWidget(registrationWindow);
+    updateScrollSize();
 }
 
 void AuthWindow::onSwitchToLogin() {
     stackedWidget->setCurrentWidget(loginWindow);
+    updateScrollSize();
 }
 
 void AuthWindow::onLogout() {
@@ -124,15 +128,30 @@ void AuthWindow::onLogout() {
     // Очищаем поля входа - берем emailInput напрямую из loginWindow
     // Переключаемся на окно входа
     stackedWidget->setCurrentWidget(loginWindow);
+    updateScrollSize();
 }
 
 void AuthWindow::onRegistrationSuccess() {
     // Переключаемся на окно входа с сообщением об успехе
     stackedWidget->setCurrentWidget(loginWindow);
+    updateScrollSize();
 }
 
 void AuthWindow::reset() {
     stackedWidget->setCurrentWidget(loginWindow);
     currentUserId = -1;
     currentUserType = -1;
+    updateScrollSize();
+}
+
+void AuthWindow::updateScrollSize() {
+    if (!stackedWidget) return;
+    QWidget *current = stackedWidget->currentWidget();
+    if (!current) return;
+    // Используем sizeHint активной страницы как минимальный размер,
+    // чтобы QScrollArea показывала скролл вместо сжатия содержимого.
+    QSize hint = current->sizeHint();
+    if (hint.isValid()) {
+        stackedWidget->setMinimumSize(hint);
+    }
 }

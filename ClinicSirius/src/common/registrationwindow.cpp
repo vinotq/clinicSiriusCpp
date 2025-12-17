@@ -103,10 +103,12 @@ void RegistrationWindow::setupUI() {
     passwordLayout->addWidget(passwordInput);
 
     passwordToggleButton = new QPushButton();
-    passwordToggleButton->setMaximumWidth(45);
+    passwordToggleButton->setCheckable(true);
+    passwordToggleButton->setMaximumWidth(40);
     passwordToggleButton->setMinimumHeight(40);
-        passwordToggleButton->setText("👁️");
-    passwordToggleButton->setIconSize(QSize(20,20));
+    passwordToggleButton->setIcon(QIcon(":/images/icon-eye.svg"));
+    passwordToggleButton->setIconSize(QSize(16,16));
+    passwordToggleButton->setProperty("class", "icon-button accent-icon");
     connect(passwordToggleButton, &QPushButton::clicked, this, &RegistrationWindow::onPasswordToggle);
     passwordLayout->addWidget(passwordToggleButton);
 
@@ -130,10 +132,12 @@ void RegistrationWindow::setupUI() {
     confirmPasswordLayout->addWidget(confirmPasswordInput);
 
     confirmPasswordToggleButton = new QPushButton();
-    confirmPasswordToggleButton->setMaximumWidth(45);
+    confirmPasswordToggleButton->setCheckable(true);
+    confirmPasswordToggleButton->setMaximumWidth(40);
     confirmPasswordToggleButton->setMinimumHeight(40);
-        confirmPasswordToggleButton->setText("👁️");
-    confirmPasswordToggleButton->setIconSize(QSize(20,20));
+    confirmPasswordToggleButton->setIcon(QIcon(":/images/icon-eye.svg"));
+    confirmPasswordToggleButton->setIconSize(QSize(16,16));
+    confirmPasswordToggleButton->setProperty("class", "icon-button accent-icon");
     connect(confirmPasswordToggleButton, &QPushButton::clicked, this, &RegistrationWindow::onConfirmPasswordToggle);
     confirmPasswordLayout->addWidget(confirmPasswordToggleButton);
 
@@ -146,7 +150,9 @@ void RegistrationWindow::setupUI() {
     mainLayout->addSpacing(10);
 
     // Кнопка регистрации
-    registerButton = new QPushButton("📝 Зарегистрироваться");
+    registerButton = new QPushButton("Зарегистрироваться");
+    registerButton->setIcon(QIcon(":/images/icon-add.svg"));
+    registerButton->setIconSize(QSize(18,18));
     registerButton->setMinimumHeight(45);
     registerButton->setFont(QFont("Arial", 12, QFont::Bold));
     connect(registerButton, &QPushButton::clicked, this, &RegistrationWindow::onRegisterClicked);
@@ -160,7 +166,9 @@ void RegistrationWindow::setupUI() {
     // Ссылка на вход
     QHBoxLayout *loginLayout = new QHBoxLayout();
     QLabel *hasAccountLabel = new QLabel("Уже есть аккаунт?");
-    loginButton = new QPushButton("🔐 Войдите");
+    loginButton = new QPushButton("Войдите");
+    loginButton->setIcon(QIcon(":/images/icon-lock.svg"));
+    loginButton->setIconSize(QSize(16,16));
     loginButton->setFlat(true);
     loginButton->setProperty("class", "login-link");
     connect(loginButton, &QPushButton::clicked, this, &RegistrationWindow::onLoginClicked);
@@ -193,8 +201,8 @@ void RegistrationWindow::onRegisterClicked() {
     QString username = usernameInput->text().trimmed();
     QString password = passwordInput->text();
 
-    // Регистрация пациента через DataManager
-    DataManager dm("../data");
+    // Регистрация пациента через DataManager (путь определяется автоматически)
+    DataManager dm;
     
     // Проверка, не существует ли уже пользователь с таким email
     if (dm.emailExists(email)) {
@@ -221,23 +229,17 @@ void RegistrationWindow::onLoginClicked() {
 }
 
 void RegistrationWindow::onPasswordToggle() {
-    if (passwordInput->echoMode() == QLineEdit::Password) {
-        passwordInput->setEchoMode(QLineEdit::Normal);
-           passwordToggleButton->setText("🙈");
-    } else {
-        passwordInput->setEchoMode(QLineEdit::Password);
-           passwordToggleButton->setText("👁️");
-    }
+    bool show = passwordInput->echoMode() == QLineEdit::Password;
+    passwordInput->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+    passwordToggleButton->setIcon(QIcon(show ? ":/images/icon-eye-off.svg" : ":/images/icon-eye.svg"));
+    passwordToggleButton->setChecked(show);
 }
 
 void RegistrationWindow::onConfirmPasswordToggle() {
-    if (confirmPasswordInput->echoMode() == QLineEdit::Password) {
-        confirmPasswordInput->setEchoMode(QLineEdit::Normal);
-           confirmPasswordToggleButton->setText("🙈");
-    } else {
-        confirmPasswordInput->setEchoMode(QLineEdit::Password);
-           confirmPasswordToggleButton->setText("👁️");
-    }
+    bool show = confirmPasswordInput->echoMode() == QLineEdit::Password;
+    confirmPasswordInput->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+    confirmPasswordToggleButton->setIcon(QIcon(show ? ":/images/icon-eye-off.svg" : ":/images/icon-eye.svg"));
+    confirmPasswordToggleButton->setChecked(show);
 }
 
 void RegistrationWindow::validatePasswords() {

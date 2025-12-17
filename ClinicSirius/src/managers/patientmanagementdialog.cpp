@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QHeaderView>
 #include <algorithm>
+#include <QIcon>
 
 PatientManagementDialog::PatientManagementDialog(QWidget* parent)
     : QWidget(parent), m_dataManager(QString()) {
@@ -23,10 +24,18 @@ void PatientManagementDialog::buildUI() {
     m_searchEdit = new QLineEdit();
     m_searchEdit->setPlaceholderText("Поиск по ФИО, email или ID...");
     
-    m_createBtn = new QPushButton("➕ Создать");
-    m_editBtn = new QPushButton("✏ Редактировать");
-    m_deleteBtn = new QPushButton("🗑 Удалить");
-    m_addToFamilyBtn = new QPushButton("👪 Добавить в семью");
+    m_createBtn = new QPushButton("Создать");
+    m_createBtn->setIcon(QIcon(":/images/icon-add.svg"));
+    m_createBtn->setIconSize(QSize(16,16));
+    m_editBtn = new QPushButton("Редактировать");
+    m_editBtn->setIcon(QIcon(":/images/icon-edit.svg"));
+    m_editBtn->setIconSize(QSize(16,16));
+    m_deleteBtn = new QPushButton("Удалить");
+    m_deleteBtn->setIcon(QIcon(":/images/icon-trash.svg"));
+    m_deleteBtn->setIconSize(QSize(16,16));
+    m_addToFamilyBtn = new QPushButton("Добавить в семью");
+    m_addToFamilyBtn->setIcon(QIcon(":/images/icon-service-shield.svg"));
+    m_addToFamilyBtn->setIconSize(QSize(16,16));
 
     top->addWidget(m_searchEdit, 1);
     top->addWidget(m_createBtn);

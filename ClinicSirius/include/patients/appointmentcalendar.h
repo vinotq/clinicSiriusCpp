@@ -16,6 +16,11 @@ public:
     void setSelectedDate(const QDate& date);
     void setAvailableDates(const QSet<QDate>& dates);
     void setMinimumDate(const QDate& date) { m_minDate = date; }
+    void reset() { 
+        m_selectedDate = QDate::currentDate();
+        m_displayedMonth = QDate::currentDate();
+        m_availableDates.clear();
+    }
 
 signals:
     void selectionChanged(const QDate& date);
