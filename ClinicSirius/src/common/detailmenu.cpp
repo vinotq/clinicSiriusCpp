@@ -23,27 +23,13 @@ void DetailMenu::setupUI() {
     toggleButton = new QPushButton(this);
     toggleButton->setText("ℹ");  // Иконка информации
     toggleButton->setMaximumWidth(40);
-    toggleButton->setStyleSheet(
-        "QPushButton {"
-        "  background-color: #3b82f6;"
-        "  color: white;"
-        "  border: none;"
-        "  border-radius: 6px;"
-        "  font-weight: bold;"
-        "  font-size: 16px;"
-        "}"
-        "QPushButton:hover {"
-        "  background-color: #2563eb;"
-        "}"
-    );
+    toggleButton->setProperty("class", "detail-toggle");
 
     // Контейнер меню
     menuContent = new QWidget(this);
     menuContent->setMaximumWidth(menuWidth);
     menuContent->setMinimumWidth(0);
-    menuContent->setStyleSheet(
-        "QWidget { background-color: #f9fafb; border-left: 1px solid #e5e7eb; }"
-    );
+    menuContent->setProperty("class", "detail-menu");
 
     // Layout меню
     menuLayout = new QVBoxLayout(menuContent);
@@ -85,16 +71,12 @@ void DetailMenu::addItem(const QString &label, const QString &value, const QStri
 
     // Подпись
     QLabel *labelWidget = new QLabel(label);
-    labelWidget->setStyleSheet(
-        "color: #6b7280; font-size: 10pt; font-weight: 600; text-transform: uppercase;"
-    );
+    labelWidget->setProperty("class", "detail-label");
 
     // Значение
     QLabel *valueWidget = new QLabel(value);
     valueWidget->setWordWrap(true);
-    valueWidget->setStyleSheet(
-        "color: #1f2937; font-size: 11pt; font-weight: 500;"
-    );
+    valueWidget->setProperty("class", "detail-value");
 
     itemLayout->addWidget(labelWidget);
     itemLayout->addWidget(valueWidget);
@@ -121,9 +103,7 @@ void DetailMenu::addCustomItem(const QString &label, QWidget *widget) {
     itemLayout->setSpacing(4);
 
     QLabel *labelWidget = new QLabel(label);
-    labelWidget->setStyleSheet(
-        "color: #6b7280; font-size: 10pt; font-weight: 600; text-transform: uppercase;"
-    );
+    labelWidget->setProperty("class", "detail-label");
 
     itemLayout->addWidget(labelWidget);
     itemLayout->addWidget(widget);

@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QPixmap>
+#include <QSize>
 #include <QMessageBox>
 #include <QFont>
 #include <QLabel>
@@ -27,15 +28,22 @@ void LoginWindow::setupUI() {
     mainLayout->setContentsMargins(40, 40, 40, 40);
     mainLayout->setSpacing(20);
 
-    // Лого/Заголовок
-    QLabel *logoLabel = new QLabel();
-    logoLabel->setText("🏥 Clinic Sirius");
+    // Лого/Заголовок (иконка + текст)
+    QHBoxLayout *logoLayout = new QHBoxLayout();
+    logoLayout->setAlignment(Qt::AlignCenter);
+    QLabel *logoIcon = new QLabel("🏥");
+    logoIcon->setProperty("class", "header-logo-icon");
+    QFont lic; lic.setPointSize(20); logoIcon->setFont(lic);
+    logoIcon->setContentsMargins(0,0,8,0);
+    QLabel *logoText = new QLabel("Клиника «Сириус»");
     QFont logoFont;
     logoFont.setPointSize(24);
     logoFont.setBold(true);
-    logoLabel->setFont(logoFont);
-    logoLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(logoLabel);
+    logoText->setFont(logoFont);
+    logoText->setAlignment(Qt::AlignCenter);
+    logoLayout->addWidget(logoIcon);
+    logoLayout->addWidget(logoText);
+    mainLayout->addLayout(logoLayout);
 
     // Приветствие
     QLabel *welcomeLabel = new QLabel("Добро пожаловать");
@@ -80,9 +88,10 @@ void LoginWindow::setupUI() {
     passwordInput->setMinimumHeight(40);
     passwordLayout->addWidget(passwordInput);
 
-    passwordToggleButton = new QPushButton("👁");
+    passwordToggleButton = new QPushButton("👁️");
     passwordToggleButton->setMaximumWidth(45);
     passwordToggleButton->setMinimumHeight(40);
+    passwordToggleButton->setProperty("class", "emoji-button");
     connect(passwordToggleButton, &QPushButton::clicked, this, &LoginWindow::onPasswordToggle);
     passwordLayout->addWidget(passwordToggleButton);
 
@@ -197,6 +206,20 @@ void LoginWindow::onLoginClicked() {
         }
     }
 
+    // Попытка входа для администратора
+    if (!authenticated) {
+        qDebug() << "Checking admin...";
+        if (dm.adminLoginByEmail(email, password)) {
+            Admin admin = dm.getAdminByEmail(email);
+            qDebug() << "Admin found:" << admin.id << admin.email;
+            if (admin.id > 0) {
+                userId = admin.id;
+                userType = 3; // Admin
+                authenticated = true;
+            }
+        }
+    }
+
     if (authenticated && userId > 0 && userType >= 0) {
         showSuccess("Успешный вход!");
         emit loginSuccess(userId, userType);
@@ -216,7 +239,7 @@ void LoginWindow::onPasswordToggle() {
         passwordToggleButton->setText("🙈");
     } else {
         passwordInput->setEchoMode(QLineEdit::Password);
-        passwordToggleButton->setText("👁");
+        passwordToggleButton->setText("👁️");
     }
 }
 

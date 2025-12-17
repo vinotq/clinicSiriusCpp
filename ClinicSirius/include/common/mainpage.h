@@ -16,6 +16,8 @@ class DoctorWidget;
 class DoctorProfileWidget;
 class AppointmentBookingWidget;
 class PatientHistoryWidget;
+class AdminWidget;
+class AdminProfileWidget;
 
 class ServiceCard : public QWidget {
     Q_OBJECT
@@ -49,6 +51,7 @@ private:
     void buildLanding();
     void buildDoctorLanding();
     void buildHeader(QHBoxLayout *headerLayout);
+    void adjustHeaderForRole();
     void updateUserChip();
     void showProfile(bool openSettingsTab = false);
     void showDoctorProfile(bool openSettingsTab = false);
@@ -74,6 +77,8 @@ private:
     PatientHistoryWidget *patientHistoryWidget;
     class ManagerWidget *managerWidget;
     class ManagerProfileWidget *managerProfileWidget;
+    AdminWidget *adminWidget;
+    AdminProfileWidget *adminProfileWidget; // CHANGED: Add admin profile widget
     LoginUser currentUser;
 };
 

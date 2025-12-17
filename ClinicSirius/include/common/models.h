@@ -6,14 +6,37 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include <QCryptographicHash>
+#include <QRandomGenerator>
 
-// Функции для работы с паролями
-inline QString hashPassword(const QString& password) {
-    return QString::fromUtf8(QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex());
+// Функции для работы с паролями с солью
+inline QString generateSalt() {
+    QRandomGenerator gen = QRandomGenerator::securelySeeded();
+    QByteArray salt;
+    for (int i = 0; i < 16; ++i) {
+        salt.append(static_cast<char>(gen.bounded(0, 256)));
+    }
+    return QString::fromUtf8(salt.toHex());
 }
 
-inline bool verifyPassword(const QString& password, const QString& hash) {
-    return hashPassword(password) == hash;
+inline QString hashPassword(const QString& password, const QString& salt = QString()) {
+    QString salted = password + salt;
+    QString hash = QString::fromUtf8(QCryptographicHash::hash(salted.toUtf8(), QCryptographicHash::Sha256).toHex());
+    if (salt.isEmpty()) {
+        // Legacy: if no salt provided, generate new one
+        QString newSalt = generateSalt();
+        return hash + ":" + newSalt;
+    }
+    return hash + ":" + salt;
+}
+
+inline bool verifyPassword(const QString& password, const QString& stored) {
+    QStringList parts = stored.split(":");
+    if (parts.size() != 2) {
+        // Legacy: no salt format, compare directly
+        return QString::fromUtf8(QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex()) == stored;
+    }
+    QString salt = parts[1];
+    return hashPassword(password, salt) == stored;
 }
 
 // Структура для хранения информации о пользователе
@@ -324,6 +347,33 @@ struct Manager {
         m.email = obj["email"].toString();
         m.password = obj["password"].toString();
         return m;
+    }
+};
+
+struct Admin {
+    int id = -1;
+    QString username;
+    QString email;
+    QString password;
+
+    QString fullName() const { return username; }
+
+    QJsonObject toJson() const {
+        QJsonObject obj;
+        obj["id"] = id;
+        obj["username"] = username;
+        obj["email"] = email;
+        obj["password"] = password;
+        return obj;
+    }
+
+    static Admin fromJson(const QJsonObject &obj) {
+        Admin a;
+        a.id = obj["id"].toInt(-1);
+        a.username = obj["username"].toString();
+        a.email = obj["email"].toString();
+        a.password = obj["password"].toString();
+        return a;
     }
 };
 

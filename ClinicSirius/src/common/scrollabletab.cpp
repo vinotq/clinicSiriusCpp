@@ -16,13 +16,11 @@ void ScrollableTab::setupUI() {
     // Создаем QScrollArea
     scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setStyleSheet(
-        "QScrollArea { border: none; background-color: #ffffff; }"
-    );
+    scrollArea->setProperty("class", "scrollable-area");
 
     // Содержимое
     contentWidget = new QWidget();
-    contentWidget->setStyleSheet("background-color: #ffffff;");
+    contentWidget->setProperty("class", "scrollable-content");
     contentLayout_ = new QVBoxLayout(contentWidget);
     contentLayout_->setContentsMargins(20, 20, 20, 20);
     contentLayout_->setSpacing(16);
@@ -32,27 +30,7 @@ void ScrollableTab::setupUI() {
 }
 
 void ScrollableTab::setupStyles() {
-    // Стилизация scrollbar
-    scrollArea->verticalScrollBar()->setStyleSheet(
-        "QScrollBar:vertical {"
-        "  border: none;"
-        "  background: #f5f5f5;"
-        "  width: 8px;"
-        "  margin: 0px 0px 0px 0px;"
-        "}"
-        "QScrollBar::handle:vertical {"
-        "  background: #cbd5e0;"
-        "  border-radius: 4px;"
-        "  min-height: 20px;"
-        "}"
-        "QScrollBar::handle:vertical:hover {"
-        "  background: #a0aec0;"
-        "}"
-        "QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {"
-        "  border: none;"
-        "  background: none;"
-        "}"
-    );
+    // Scrollbar styling moved to resources/styles.qss
 }
 
 void ScrollableTab::addContent(QWidget *widget) {

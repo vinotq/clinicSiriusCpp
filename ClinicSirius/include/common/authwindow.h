@@ -9,6 +9,8 @@ class LoginWindow;
 class RegistrationWindow;
 class MainPage;
 
+class QScrollArea;
+
 class AuthWindow : public QMainWindow {
     Q_OBJECT
 
@@ -35,6 +37,7 @@ private:
     LoginWindow *loginWindow;
     RegistrationWindow *registrationWindow;
     MainPage *mainPage;
+    QScrollArea *globalScroll;
 
     int currentUserId;
     int currentUserType;

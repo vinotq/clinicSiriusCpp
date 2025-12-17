@@ -19,10 +19,14 @@ else()
   set(QT_VERSION_MAJOR 6)
 endif()
 
-# Include directories
+if(QT_VERSION_MAJOR GREATER_EQUAL 6)
+  find_package(Qt6 COMPONENTS Charts QUIET)
+else()
+  find_package(Qt5 COMPONENTS Charts QUIET)
+endif()
+
 include_directories(include include/common include/doctors include/patients include/managers include/admins)
 
-# Source files - organized by modules
 set(COMMON_SOURCES
   src/common/main.cpp
   src/common/mainwindow.cpp
@@ -41,10 +45,6 @@ set(COMMON_SOURCES
   src/common/statsbadge.cpp
 )
 
-# set(DOCTORS_SOURCES
-#   src/doctors/doctorwidget.cpp
-# )
-
 set(DOCTORS_SOURCES
   src/doctors/doctorwidget.cpp
   src/doctors/doctorvisitdialog.cpp
@@ -59,19 +59,28 @@ set(PATIENTS_SOURCES
   src/patients/addbycodedialog.cpp
   src/patients/appointmentbookingwidget.cpp
   src/patients/appointmentcalendar.cpp
+  src/patients/patientselectiondialog.cpp
+  src/patients/familyviewerwidget.cpp
 )
 
 set(MANAGERS_SOURCES
   src/managers/managerwidget.cpp
   src/managers/managerprofilewidget.cpp
   src/managers/managerscheduleviewer.cpp
+  src/managers/roomscheduleviewer.cpp
   src/managers/patientmanagementdialog.cpp
   src/managers/bulkoperationsdialog.cpp
 )
 
-# set(ADMINS_SOURCES
-#   src/admins/adminwidget.cpp
-# )
+set(ADMINS_SOURCES
+  src/admins/adminwidget.cpp
+  src/admins/patientappointmentsviewer.cpp
+  src/admins/adminprofilewidget.cpp
+)
+
+set(ADMINS_SOURCES_EXTRA
+  src/admins/statisticswidget.cpp
+)
 
 # Header files - organized by modules
 set(COMMON_HEADERS
@@ -105,26 +114,36 @@ set(PATIENTS_HEADERS
   include/patients/addbycodedialog.h
   include/patients/appointmentbookingwidget.h
   include/patients/appointmentcalendar.h
+  include/patients/patientselectiondialog.h
+  include/patients/familyviewerwidget.h
 )
 
 set(MANAGERS_HEADERS
   include/managers/managerwidget.h
   include/managers/managerprofilewidget.h
   include/managers/managerscheduleviewer.h
+  include/managers/roomscheduleviewer.h
   include/managers/patientmanagementdialog.h
   include/managers/bulkoperationsdialog.h
 )
 
-# set(ADMINS_HEADERS
-#   include/admins/adminwidget.h
-# )
+set(ADMINS_HEADERS
+  include/admins/adminwidget.h
+  include/admins/patientappointmentsviewer.h
+  include/admins/adminprofilewidget.h
+)
+
+set(ADMINS_HEADERS_EXTRA
+  include/admins/statisticswidget.h
+)
 
 set(SOURCES
   ${COMMON_SOURCES}
   ${DOCTORS_SOURCES}
   ${PATIENTS_SOURCES}
   ${MANAGERS_SOURCES}
-  # ${ADMINS_SOURCES}
+  ${ADMINS_SOURCES}
+  ${ADMINS_SOURCES_EXTRA}
 )
 
 set(HEADERS
@@ -132,7 +151,8 @@ set(HEADERS
   ${DOCTORS_HEADERS}
   ${PATIENTS_HEADERS}
   ${MANAGERS_HEADERS}
-  # ${ADMINS_HEADERS}
+  ${ADMINS_HEADERS}
+  ${ADMINS_HEADERS_EXTRA}
 )
 
 add_executable(ClinicSirius
@@ -142,6 +162,11 @@ add_executable(ClinicSirius
 )
 
 target_link_libraries(ClinicSirius PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets)
+
+if(TARGET Qt${QT_VERSION_MAJOR}::Charts)
+  target_link_libraries(ClinicSirius PRIVATE Qt${QT_VERSION_MAJOR}::Charts)
+  target_compile_definitions(ClinicSirius PRIVATE USE_QT_CHARTS=1)
+endif()
 
 
 add_custom_command(TARGET ClinicSirius POST_BUILD

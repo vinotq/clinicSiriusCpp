@@ -1,6 +1,7 @@
 #include "infocard.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QIcon>
 
 InfoCard::InfoCard(const QString &title, const QString &description,
                   const QString &iconPath, QWidget *parent)
@@ -23,6 +24,7 @@ void InfoCard::setupUI() {
     mainLayout->setSpacing(10);
 
     iconLabel = new QLabel();
+    iconLabel->setProperty("class", "info-icon");
     iconLabel->setFixedSize(60, 60);
     iconLabel->setAlignment(Qt::AlignCenter);
 
@@ -56,8 +58,24 @@ void InfoCard::setDescription(const QString &description) {
 }
 
 void InfoCard::setIcon(const QString &iconPath) {
-    QPixmap pixmap(iconPath);
-    if (!pixmap.isNull()) {
-        iconLabel->setPixmap(pixmap.scaledToWidth(60, Qt::SmoothTransformation));
-    }
+    // Replace image icons with emoji equivalents. Map common icon names
+    // to emoji and set as label text. This avoids loading image resources.
+    QString key = iconPath.toLower();
+    QString emoji = "🔹";
+    if (key.contains("clinic") || key.contains("sirius")) emoji = "🏥";
+    else if (key.contains("doctor") || key.contains("medical")) emoji = QString::fromUtf8("👩\u200D⚕️");
+    else if (key.contains("check")) emoji = "✅";
+    else if (key.contains("cancel") || key.contains("delete")) emoji = "❌";
+    else if (key.contains("eye-off")) emoji = "🙈";
+    else if (key.contains("eye") || key.contains("visibility")) emoji = "👁️";
+    else if (key.contains("profile") || key.contains("account")) emoji = "👤";
+    else if (key.contains("location")) emoji = "📍";
+    else if (key.contains("phone") || key.contains("call")) emoji = "📞";
+    else if (key.contains("history") || key.contains("autorenew")) emoji = "🕘";
+    else if (key.contains("clock") || key.contains("schedule")) emoji = "⏰";
+
+    iconLabel->setText(emoji);
+    QFont f = iconLabel->font();
+    f.setPointSize(24);
+    iconLabel->setFont(f);
 }
