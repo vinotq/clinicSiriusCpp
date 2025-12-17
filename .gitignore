@@ -1,12 +1,7 @@
-/data
 /data copy
 /data_backup_20251213_115453
 /.vscode
 /.amazonq
 /ClinicSirius/.qtcreator
-/ClinicSirius/build/.qt
-/ClinicSirius/build/CMakeFiles
-/ClinicSirius/build/Makefile
-/ClinicSirius/build/cmake_install.cmake
-/ClinicSirius/build/Desktop-Debug
-/ClinicSirius/build/CMakeCache.txt
+/ClinicSirius/build/
+/ClinicSirius/build-release/

@@ -3,6 +3,43 @@
    Professional, Clean Design System
    ============================================================================ */
 
+/* Resource bindings - utility classes to attach SVGs from resources.qrc
+   Use `QLabel` with `class="app-logo"` or `class="hero-logo"` in UI
+   to show the application/logo images. Use `QPushButton[class="icon-only"]`
+   for square icon buttons that rely on background-image. */
+
+/* Logo placeholders — use emoji text on the QLabel itself instead
+   (images removed). To show the logo, set the label text to the
+   hospital emoji "🏥" (or another emoji) in UI code. */
+QLabel[class="app-logo"] {
+    min-height: 40px;
+    min-width: 120px;
+    background-color: transparent;
+    font-size: 18pt;
+}
+
+QLabel[class="hero-logo"] {
+    min-height: 120px;
+    min-width: 320px;
+    background-color: transparent;
+    font-size: 48pt;
+}
+
+QPushButton[class="icon-only"] {
+    background-color: transparent;
+    border: none;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px;
+}
+
+/* Provide default background icons for some utility widgets */
+QWidget[class="hero"] { 
+    /* decorative imagery removed — prefer emoji placed in a QLabel
+       inside the hero or use icon fonts. */
+}
+
+
 /* Global Settings - Fixed Theme (не меняется системными настройками) */
 * {
     font-family: -apple-system, "Segoe UI", "Noto Sans", "Helvetica Neue", sans-serif;
@@ -62,6 +99,18 @@ QGroupBox {
     border: 1px solid #e0e0e0 !important;
     border-radius: 8px;
     background-color: #ffffff !important;
+}
+
+/* Emoji/icon replacements styling */
+QLabel[class="info-icon"] {
+    font-size: 24pt;
+    background-color: transparent;
+}
+
+QPushButton[class="emoji-button"], QPushButton[class="icon-button"] {
+    font-size: 12pt;
+    padding: 6px;
+    background-color: transparent;
 }
 
 QFrame {
@@ -228,6 +277,158 @@ QLineEdit {
     min-height: 36px;
 }
 
+QScrollArea[class="scrollable-area"] {
+    border: none;
+    background-color: #ffffff;
+}
+
+QWidget[class="scrollable-content"] {
+    background-color: #ffffff;
+}
+
+QScrollArea[class="no-border-scrollarea"] {
+    border: none;
+}
+
+/* Scrollbar styling */
+QScrollBar:vertical {
+    border: none;
+    background: #f5f5f5;
+    width: 8px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #cbd5e0;
+    border-radius: 4px;
+    min-height: 20px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #a0aec0;
+}
+QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
+    border: none;
+    background: none;
+}
+
+/* Detail menu */
+QWidget[class="detail-menu"] {
+    background-color: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+}
+
+QPushButton[class="detail-toggle"] {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 16px;
+}
+QPushButton[class="detail-toggle"]:hover {
+    background-color: #2563eb;
+}
+
+QLabel[class="detail-label"] {
+    color: #6b7280;
+    font-size: 10pt;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+QLabel[class="detail-value"] {
+    color: #1f2937;
+    font-size: 11pt;
+    font-weight: 500;
+}
+
+/* Appointment calendar day button states */
+QPushButton[class="day-button"][state="selected"] {
+    background-color: #2196F3;
+    color: white;
+    border: 2px solid #1976D2;
+    border-radius: 4px;
+    font-weight: bold;
+    padding: 5px;
+}
+QPushButton[class="day-button"][state="selected"]:hover {
+    background-color: #1976D2;
+}
+QPushButton[class="day-button"][state="available"] {
+    background-color: #E3F2FD;
+    color: #1565C0;
+    border: 2px solid #2196F3;
+    border-radius: 4px;
+    font-weight: bold;
+    padding: 5px;
+}
+QPushButton[class="day-button"][state="available"]:hover {
+    background-color: #BBDEFB;
+    border: 2px solid #1976D2;
+}
+QPushButton[class="day-button"][state="normal"] {
+    background-color: #F5F5F5;
+    color: #9E9E9E;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    padding: 5px;
+}
+QPushButton[class="day-button"][state="normal"]:disabled {
+    background-color: #F5F5F5;
+    color: #BDBDBD;
+}
+
+/* Cards and selectable cards */
+QWidget[class="specialty-card"] {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: white;
+}
+QWidget[class="specialty-card"]:hover {
+    border: 2px solid #4CAF50;
+    background-color: #f9fff9;
+}
+
+QWidget[class="doctor-card"] {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: white;
+}
+QWidget[class="doctor-card"]:hover {
+    border: 2px solid #2196F3;
+    background-color: #f0f7ff;
+}
+
+QPushButton[class="back-button"] {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 8px 12px;
+    background-color: white;
+}
+QPushButton[class="back-button"]:hover { background-color: #f5f5f5; }
+
+QLabel[class="page-title"] { font-weight: 700; font-size: 18pt; }
+
+QLabel[class="section-header"] { font-weight: 700; font-size: 18pt; }
+QLabel[class="profile-name"] { font-weight: 700; font-size: 16pt; }
+
+/* Invitation code input / error label */
+QLineEdit[class="invitation-code-input"] { font-size: 14pt; letter-spacing: 2px; font-weight: 700; }
+QLabel[class="error-label"] { color: #ef4444; font-weight: 700; }
+
+/* status property on labels */
+QLabel[status="error"] { color: #ef4444; }
+QLabel[status="success"] { color: #10b981; }
+
+QLabel[class="use-code-label"] {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+QLabel[class="status-label"] {
+    font-weight: 500;
+    font-size: 10pt;
+}
+
 QLineEdit:focus {
     border: 2px solid #3b82f6;
     background-color: #f8fbff;
@@ -246,6 +447,27 @@ QLineEdit:read-only {
 QTextEdit {
     background-color: #ffffff;
     color: #333333;
+
+/* Icon label outlines to improve contrast */
+QLabel[class="info-icon"], QLabel[class="service-icon"], QLabel[class="header-logo-icon"], QLabel[class="doctor-card-icon"], QLabel[class="stats-icon"], QLabel[class="contact-icon"] {
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 6px;
+    background-color: #ffffff;
+}
+
+/* Cards and important regions should have subtle outlines */
+QWidget[class="info-card"], QWidget[class="service-card"], QWidget[class="doctor-card"], QWidget[class="stats-badge"], QWidget[class="content-wrapper"] {
+    box-shadow: none;
+    border: 1px solid #e6e9ee;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+/* Header logo button: make icon and text distinct */
+QPushButton[class="header-logo-btn"] QLabel[class="header-logo-icon"] {
+    margin-right: 8px;
+}
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     padding: 10px 12px;
@@ -398,6 +620,72 @@ QGroupBox {
 
 QGroupBox::title {
     subcontrol-origin: margin;
+
+/* Dialog / small helpers */
+QLabel[class="dialog-title"] {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+QLabel[class="muted-text"] {
+    color: #666666;
+    font-size: 11pt;
+}
+
+QLabel[class="detail-header"] {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* Stats badge */
+QWidget[class="stats-badge"] {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+QWidget[class="stats-badge"]:hover {
+    background-color: #f9fafb;
+    border: 1px solid #d1d5db;
+}
+
+QLabel[class="stats-icon"] {
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    border-radius: 8px;
+    qproperty-alignment: 'AlignCenter';
+}
+
+QLabel[class="stats-value"] {
+    font-size: 28pt;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+QLabel[class="stats-label"] {
+    color: #6b7280;
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Badge type color variants */
+QLabel[class="stats-value"][badgeType="primary"] { color: #3b82f6; }
+QLabel[class="stats-value"][badgeType="success"] { color: #10b981; }
+QLabel[class="stats-value"][badgeType="warning"] { color: #f59e0b; }
+QLabel[class="stats-value"][badgeType="danger"]  { color: #ef4444; }
+QLabel[class="stats-value"][badgeType="info"]    { color: #06b6d4; }
+
+QLabel[class="stats-icon"][badgeType="primary"] { background-color: #e0e7ff; }
+QLabel[class="stats-icon"][badgeType="success"] { background-color: #d1fae5; }
+QLabel[class="stats-icon"][badgeType="warning"] { background-color: #fef3c7; }
+QLabel[class="stats-icon"][badgeType="danger"]  { background-color: #fee2e2; }
+QLabel[class="stats-icon"][badgeType="info"]    { background-color: #cffafe; }
     left: 10px;
     padding: 0px 5px;
 }
@@ -1504,4 +1792,36 @@ QPushButton[class="danger-button"] {
 QPushButton[class="danger-button"]:hover {
     background-color: #dc2626;
 }
+
+/* ==========================================================================
+   OUTLINES / FOCUS STATES
+   Subtle outlines to improve keyboard navigation and visual affordance
+   ==========================================================================
+*/
+
+QWidget:focus, QPushButton:focus, QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.08);
+}
+
+QPushButton:focus {
+    border: 2px solid rgba(59,130,246,0.14);
+}
+
+QWidget[class="card"]:focus, QWidget[class="modern-card"]:focus {
+    border: 1px solid #3b82f6;
+    box-shadow: 0 8px 20px rgba(59,130,246,0.08);
+}
+
+/* subtle outline for header / separation */
+QWidget[class="header-widget"] {
+    border-bottom: 1px solid #e6eef6;
+}
+
+/* input focus should keep clear emphasis */
+QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
+    background-color: #ffffff;
+    border-color: #3b82f6;
+}
+
 
