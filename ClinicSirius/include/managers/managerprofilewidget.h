@@ -2,6 +2,7 @@
 #define MANAGERPROFILEWIDGET_H
 
 #include <QWidget>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
 #include "common/models.h"
@@ -17,9 +18,7 @@ signals:
     void requestLogout();
 
 private slots:
-    void onRegisterPatient();
-    void onAttachToFamily();
-    void onViewClinicSchedule();
+    void onSaveSettings();
 
 private:
     void buildUI();
@@ -27,12 +26,16 @@ private:
 
     LoginUser m_user;
     DataManager m_dataManager;
-
-    QLabel *nameLabel;
-    QLabel *emailLabel;
-    QPushButton *registerPatientBtn;
-    QPushButton *attachFamilyBtn;
-    QPushButton *viewScheduleBtn;
+    
+    QLabel* m_userIdLabel;
+    QLineEdit* m_firstNameEdit;
+    QLineEdit* m_lastNameEdit;
+    QLineEdit* m_patronymicEdit;
+    QLineEdit* m_emailEdit;
+    QLineEdit* m_passwordEdit;
+    QLineEdit* m_phoneEdit;
+    QPushButton* m_saveBtn;
+    QPushButton* m_logoutBtn;
 };
 
 #endif // MANAGERPROFILEWIDGET_H

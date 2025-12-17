@@ -40,7 +40,7 @@ private:
     int headPatientId;          // ID главы семьи
 
     QLineEdit *codeInput;       // Для кода приглашения
-    QLabel *errorLabel;
+    QLabel *statusLabel;
     QPushButton *addButton;
 };
 

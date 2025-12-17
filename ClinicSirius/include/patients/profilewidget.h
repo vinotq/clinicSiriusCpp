@@ -62,11 +62,11 @@ private:
     QPushButton *useCodeButton;
     QPushButton *refreshDataButton;
     QLineEdit *invitationCodeDisplay;
-    QLineEdit *invitationCodeInput;
     QLabel *codeStatusLabel;
 
     // Modern UI components
     StatsBadge *familyCountBadge;
+    QLineEdit *familySearchBox;
 
     // Settings tab
     QLineEdit *firstNameEdit;

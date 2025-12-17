@@ -6,6 +6,10 @@
 #include <QCoreApplication>
 #include <QDate>
 #include <QTimer>
+#include <QStyle>
+#include <QIcon>
+#include <QPixmap>
+#include <QSize>
 
 CreatePatientDialog::CreatePatientDialog(QWidget *parent, const Patient *existing)
     : QDialog(parent),
@@ -34,7 +38,7 @@ CreatePatientDialog::CreatePatientDialog(QWidget *parent, const Patient *existin
         emailEdit->setText(existing->email);
         snilsEdit->setText(existing->snils);
         omsEdit->setText(existing->oms);
-        createButton->setText("✓ Обновить");
+        createButton->setText("Обновить");
     }
 }
 
@@ -43,7 +47,7 @@ void CreatePatientDialog::buildUI() {
     QFormLayout *form = new QFormLayout();
 
     QLabel *titleLabel = new QLabel("Добавление члена семьи");
-    titleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+    titleLabel->setProperty("class", "dialog-title");
     main->addWidget(titleLabel);
 
     firstNameEdit = new QLineEdit();
@@ -68,8 +72,8 @@ void CreatePatientDialog::buildUI() {
     form->addRow("Полис ОМС:", omsEdit);
 
     statusLabel = new QLabel("");
-    createButton = new QPushButton("✓ Добавить");
-    cancelButton = new QPushButton("✗ Отмена");
+    createButton = new QPushButton("Добавить");
+    cancelButton = new QPushButton("Отмена");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(createButton);
@@ -86,8 +90,8 @@ void CreatePatientDialog::buildUI() {
 void CreatePatientDialog::onCreatePatient() {
     // Валидация
     if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty()) {
-        statusLabel->setText("✗ Заполните имя и фамилию");
-        statusLabel->setStyleSheet("color: red;");
+        statusLabel->setText("Заполните имя и фамилию");
+        statusLabel->setProperty("status", "error");
         return;
     }
 
@@ -110,13 +114,17 @@ void CreatePatientDialog::onCreatePatient() {
     // Сохраняем в БД (создание или обновление)
     if (!editMode) {
         dataManager.addPatient(createdPatient);
-        statusLabel->setText("✓ Пациент добавлен");
+        statusLabel->setText("Пациент добавлен");
+        statusLabel->setProperty("status", "success");
     } else {
         dataManager.updatePatient(createdPatient);
-        statusLabel->setText("✓ Данные пациента обновлены");
+        statusLabel->setText("Данные пациента обновлены");
+        statusLabel->setProperty("status", "success");
     }
     emit patientCreated(createdPatient);
-    statusLabel->setStyleSheet("color: green;");
+    // Ensure style is updated from QSS
+    style()->unpolish(statusLabel);
+    style()->polish(statusLabel);
     QTimer::singleShot(800, this, &QDialog::accept);
 }
 

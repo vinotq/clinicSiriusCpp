@@ -2,11 +2,13 @@
 #define BULKOPERATIONSDIALOG_H
 
 #include <QDialog>
-#include <QComboBox>
+#include <QLineEdit>
+#include <QCompleter>
 #include <QDateEdit>
 #include <QTimeEdit>
 #include <QSpinBox>
 #include <QPushButton>
+#include <QCheckBox>
 #include "common/datamanager.h"
 
 class BulkOperationsDialog : public QDialog {
@@ -19,11 +21,15 @@ private slots:
 
 private:
     void buildUI();
+    void loadDoctors();
+    
     DataManager m_dataManager;
-    QComboBox* m_doctorCombo;
+    QLineEdit* m_doctorEdit;
+    QCompleter* m_doctorCompleter;
     QDateEdit* m_dateEdit;
     QTimeEdit* m_startTimeEdit;
     QTimeEdit* m_endTimeEdit;
+    QCheckBox* m_lunchCheckBox;
     QTimeEdit* m_lunchFromEdit;
     QTimeEdit* m_lunchToEdit;
     QSpinBox* m_intervalSpin; // minutes

@@ -2,11 +2,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
-#include <QInputDialog>
 #include <QLabel>
-#include <QPushButton>
-#include "patients/createpatientdialog.h"
-#include "managers/managerscheduleviewer.h"
 
 ManagerProfileWidget::ManagerProfileWidget(QWidget *parent)
     : QWidget(parent), m_dataManager(QString()) {
@@ -15,31 +11,108 @@ ManagerProfileWidget::ManagerProfileWidget(QWidget *parent)
 
 void ManagerProfileWidget::buildUI() {
     QVBoxLayout *main = new QVBoxLayout(this);
-    QHBoxLayout *header = new QHBoxLayout();
+    main->setContentsMargins(16, 16, 16, 16);
+    main->setSpacing(12);
 
-    nameLabel = new QLabel("Менеджер: —");
-    nameLabel->setStyleSheet("font-weight:bold; font-size:16px;");
-    header->addWidget(nameLabel);
-    header->addStretch();
-    main->addLayout(header);
+    // Header
+    QLabel* title = new QLabel("Мой профиль");
+    QFont titleFont; titleFont.setPointSize(14); titleFont.setBold(true);
+    title->setFont(titleFont);
+    main->addWidget(title);
 
-    emailLabel = new QLabel("Email: —");
-    main->addWidget(emailLabel);
+    // User ID (read-only)
+    QHBoxLayout* idLayout = new QHBoxLayout();
+    idLayout->addWidget(new QLabel("ID менеджера:"), 0);
+    m_userIdLabel = new QLabel("—");
+    QFont monoFont; monoFont.setFamily("Courier");
+    m_userIdLabel->setFont(monoFont);
+    idLayout->addWidget(m_userIdLabel, 0);
+    idLayout->addStretch();
+    main->addLayout(idLayout);
 
-    registerPatientBtn = new QPushButton("➕ Зарегистрировать пациента");
-    attachFamilyBtn = new QPushButton("🔗 Прикрепить к семье");
-    viewScheduleBtn = new QPushButton("📋 Посмотреть расписание врачей");
+    main->addSpacing(12);
 
-    QHBoxLayout *actions = new QHBoxLayout();
-    actions->addWidget(registerPatientBtn);
-    actions->addWidget(attachFamilyBtn);
-    actions->addWidget(viewScheduleBtn);
-    actions->addStretch();
-    main->addLayout(actions);
+    // Form fields
+    QLabel* formTitle = new QLabel("Основная информация");
+    QFont formFont; formFont.setPointSize(11); formFont.setBold(true);
+    formTitle->setFont(formFont);
+    main->addWidget(formTitle);
 
-    connect(registerPatientBtn, &QPushButton::clicked, this, &ManagerProfileWidget::onRegisterPatient);
-    connect(attachFamilyBtn, &QPushButton::clicked, this, &ManagerProfileWidget::onAttachToFamily);
-    connect(viewScheduleBtn, &QPushButton::clicked, this, &ManagerProfileWidget::onViewClinicSchedule);
+    // First name
+    QHBoxLayout* firstLayout = new QHBoxLayout();
+    firstLayout->addWidget(new QLabel("Имя:"), 0);
+    m_firstNameEdit = new QLineEdit();
+    m_firstNameEdit->setPlaceholderText("Введите имя...");
+    firstLayout->addWidget(m_firstNameEdit, 1);
+    main->addLayout(firstLayout);
+
+    // Last name
+    QHBoxLayout* lastLayout = new QHBoxLayout();
+    lastLayout->addWidget(new QLabel("Фамилия:"), 0);
+    m_lastNameEdit = new QLineEdit();
+    m_lastNameEdit->setPlaceholderText("Введите фамилию...");
+    lastLayout->addWidget(m_lastNameEdit, 1);
+    main->addLayout(lastLayout);
+
+    // Patronymic (not used in Manager model, but kept for future extension)
+    QHBoxLayout* patronymicLayout = new QHBoxLayout();
+    patronymicLayout->addWidget(new QLabel("Отчество:"), 0);
+    m_patronymicEdit = new QLineEdit();
+    m_patronymicEdit->setPlaceholderText("(не используется)");
+    m_patronymicEdit->setReadOnly(true);
+    patronymicLayout->addWidget(m_patronymicEdit, 1);
+    main->addLayout(patronymicLayout);
+
+    main->addSpacing(8);
+
+    // Email
+    QHBoxLayout* emailLayout = new QHBoxLayout();
+    emailLayout->addWidget(new QLabel("Email:"), 0);
+    m_emailEdit = new QLineEdit();
+    m_emailEdit->setPlaceholderText("example@clinic.ru");
+    emailLayout->addWidget(m_emailEdit, 1);
+    main->addLayout(emailLayout);
+
+    // Phone (not used in Manager model, but kept for future extension)
+    QHBoxLayout* phoneLayout = new QHBoxLayout();
+    phoneLayout->addWidget(new QLabel("Телефон:"), 0);
+    m_phoneEdit = new QLineEdit();
+    m_phoneEdit->setPlaceholderText("(не используется)");
+    m_phoneEdit->setReadOnly(true);
+    phoneLayout->addWidget(m_phoneEdit, 1);
+    main->addLayout(phoneLayout);
+
+    main->addSpacing(12);
+
+    // Password
+    QLabel* securityTitle = new QLabel("Безопасность");
+    securityTitle->setFont(formFont);
+    main->addWidget(securityTitle);
+
+    QHBoxLayout* passwordLayout = new QHBoxLayout();
+    passwordLayout->addWidget(new QLabel("Новый пароль:"), 0);
+    m_passwordEdit = new QLineEdit();
+    m_passwordEdit->setPlaceholderText("Оставьте пустым, если не хотите менять");
+    m_passwordEdit->setEchoMode(QLineEdit::Password);
+    passwordLayout->addWidget(m_passwordEdit, 1);
+    main->addLayout(passwordLayout);
+
+    main->addSpacing(16);
+    main->addStretch();
+
+    // Buttons
+    QHBoxLayout* buttonLayout = new QHBoxLayout();
+    m_saveBtn = new QPushButton("💾 Сохранить");
+    m_logoutBtn = new QPushButton("🚪 Выход");
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(m_saveBtn);
+    buttonLayout->addWidget(m_logoutBtn);
+    main->addLayout(buttonLayout);
+
+    connect(m_saveBtn, &QPushButton::clicked, this, &ManagerProfileWidget::onSaveSettings);
+    connect(m_logoutBtn, &QPushButton::clicked, this, [this]() {
+        emit requestLogout();
+    });
 }
 
 void ManagerProfileWidget::setUser(const LoginUser &user) {
@@ -48,41 +121,40 @@ void ManagerProfileWidget::setUser(const LoginUser &user) {
 }
 
 void ManagerProfileWidget::loadManagerInfo() {
-    Manager m = m_dataManager.getManagerById(m_user.id);
-    nameLabel->setText(QString("Менеджер: %1").arg(m.fullName()));
-    emailLabel->setText(QString("Email: %1").arg(m.email));
+    Manager manager = m_dataManager.getManagerById(m_user.id);
+    
+    m_userIdLabel->setText(QString::number(manager.id));
+    m_firstNameEdit->setText(manager.fname);
+    m_lastNameEdit->setText(manager.lname);
+    m_patronymicEdit->clear();  // Manager doesn't have patronymic field
+    m_emailEdit->setText(manager.email);
+    m_phoneEdit->clear();  // Manager doesn't have phone field
+    m_passwordEdit->clear();
 }
 
-void ManagerProfileWidget::onRegisterPatient() {
-    // Reuse existing CreatePatientDialog
-    CreatePatientDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        Patient p = dlg.getCreatedPatient();
-        p.id_patient = m_dataManager.getNextPatientId();
-        // Password should be hashed; CreatePatientDialog already handles
-        m_dataManager.addPatient(p);
-        QMessageBox::information(this, "Готово", "Пациент успешно зарегистрирован");
+void ManagerProfileWidget::onSaveSettings() {
+    if (m_firstNameEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Введите имя");
+        return;
     }
-}
+    
+    if (m_lastNameEdit->text().trimmed().isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Введите фамилию");
+        return;
+    }
 
-void ManagerProfileWidget::onAttachToFamily() {
-    bool ok = false;
-    int parentId = QInputDialog::getInt(this, "ID родителя", "Введите ID родителя:", 0, 0, 1000000, 1, &ok);
-    if (!ok) return;
-    int childId = QInputDialog::getInt(this, "ID ребёнка", "Введите ID ребёнка:", 0, 0, 1000000, 1, &ok);
-    if (!ok) return;
-
-    // Create PatientGroup entry
-    PatientGroup pg;
-    pg.id_patient_group = m_dataManager.getNextPatientGroupId();
-    pg.id_parent = parentId;
-    pg.id_child = childId;
-    pg.family_head = parentId;
-    m_dataManager.addFamilyMember(pg);
-    QMessageBox::information(this, "Готово", "Пациент прикреплён к семье");
-}
-
-void ManagerProfileWidget::onViewClinicSchedule() {
-    ManagerScheduleViewer dlg(this);
-    dlg.exec();
+    Manager manager = m_dataManager.getManagerById(m_user.id);
+    manager.fname = m_firstNameEdit->text();
+    manager.lname = m_lastNameEdit->text();
+    manager.email = m_emailEdit->text();
+    // Note: patronymic and phone fields are not stored in Manager model
+    
+    if (!m_passwordEdit->text().isEmpty()) {
+        // If password is provided, update it (should be hashed in real application)
+        manager.password = m_passwordEdit->text();
+    }
+    
+    m_dataManager.updateManager(manager);
+    QMessageBox::information(this, "Успешно", "Профиль обновлен");
+    m_passwordEdit->clear();
 }

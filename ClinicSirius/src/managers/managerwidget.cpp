@@ -2,213 +2,248 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QSplitter>
 #include <QMessageBox>
-#include <QInputDialog>
-#include <QDialog>
-#include "patients/appointmentbookingwidget.h"
+#include <QShortcut>
+#include <QStyledItemDelegate>
 #include "managers/managerscheduleviewer.h"
+#include "managers/roomscheduleviewer.h"
 #include "managers/patientmanagementdialog.h"
 #include "managers/bulkoperationsdialog.h"
+#include "patients/familyviewerwidget.h"
 
 ManagerWidget::ManagerWidget(QWidget* parent)
     : QWidget(parent), m_dataManager(QString()) {
-    QVBoxLayout* main = new QVBoxLayout(this);
-    QHBoxLayout* header = new QHBoxLayout();
+    
+    buildUI();
+}
 
+void ManagerWidget::buildUI() {
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
+
+    // Create splitter: sidebar | content
+    QSplitter* splitter = new QSplitter(Qt::Horizontal);
+    
+    // Create sidebar
+    createSidebar();
+    splitter->addWidget(createSidebarWidget());
+    
+    // Create stacked widget for pages
+    m_stack = new QStackedWidget();
+    splitter->addWidget(m_stack);
+    
+    // Set splitter sizes (sidebar narrower, content wider)
+    splitter->setSizes({200, 600});
+    splitter->setStretchFactor(0, 0);
+    splitter->setStretchFactor(1, 1);
+    
+    mainLayout->addWidget(splitter);
+
+    // Create pages
+    createDashboardPage();
+    m_schedulePage = new ManagerScheduleViewer(&m_dataManager, this);
+    m_roomSchedulePage = new RoomScheduleViewer(this);
+    m_patientPage = new PatientManagementDialog(this);
+    m_bulkOpsPage = new BulkOperationsDialog(this);
+    m_familyPage = new FamilyViewerWidget(this);
+
+    // Add pages to stack
+    m_stack->addWidget(m_dashboardPage);      // Index 0
+    m_stack->addWidget(m_schedulePage);        // Index 1
+    m_stack->addWidget(m_roomSchedulePage);    // Index 2
+    m_stack->addWidget(m_patientPage);         // Index 3
+    m_stack->addWidget(m_familyPage);          // Index 4
+    m_stack->addWidget(m_bulkOpsPage);         // Index 5
+
+    m_stack->setCurrentIndex(DashboardPage);
+    
+    // Add Esc key shortcut for navigation (except on dashboard)
+    new QShortcut(Qt::Key_Escape, this, [this]() {
+        if (m_stack->currentIndex() != DashboardPage) {
+            goToDashboard();
+        }
+    });
+}
+
+QWidget* ManagerWidget::createSidebarWidget() {
+    QWidget* sidebarWidget = new QWidget();
+    QVBoxLayout* layout = new QVBoxLayout(sidebarWidget);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(8);
+
+    // User profile section
+    QWidget* profileWidget = new QWidget();
+    QVBoxLayout* profileLayout = new QVBoxLayout(profileWidget);
+    profileLayout->setContentsMargins(0, 0, 0, 0);
+    profileLayout->setSpacing(4);
+
+    m_userNameLabel = new QLabel("Менеджер");
+    QFont nameFont; nameFont.setPointSize(10); nameFont.setBold(true);
+    m_userNameLabel->setFont(nameFont);
+    profileLayout->addWidget(m_userNameLabel);
+
+    m_userEmailLabel = new QLabel("email@clinic.com");
+    QFont emailFont; emailFont.setPointSize(9);
+    m_userEmailLabel->setFont(emailFont);
+    m_userEmailLabel->setStyleSheet("color: #666;");
+    profileLayout->addWidget(m_userEmailLabel);
+
+    layout->addWidget(profileWidget);
+    layout->addSpacing(16);
+
+    // Navigation items
+    m_sidebar = new QListWidget();
+    m_sidebar->setObjectName("navigationSidebar");
+    m_sidebar->addItem("📊 Дашборд");
+    m_sidebar->addItem("📅 Расписание врачей");
+    m_sidebar->addItem("🏥 Расписание кабинетов");
+    m_sidebar->addItem("👥 Пациенты");
+    m_sidebar->addItem("👨‍👩‍👧 Управление семьей");
+    m_sidebar->addItem("🛠 Массовые операции");
+    
+    m_sidebar->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_sidebar->setItemDelegate(new QStyledItemDelegate(m_sidebar));
+    m_sidebar->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_sidebar->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_sidebar->item(0)->setSelected(true);
+
+    connect(m_sidebar, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
+        int index = m_sidebar->row(item);
+        onSidebarItemClicked(index);
+    });
+
+    layout->addWidget(m_sidebar, 1);
+    layout->addStretch();
+
+    return sidebarWidget;
+}
+
+void ManagerWidget::createDashboardPage() {
+    m_dashboardPage = new QWidget();
+    QVBoxLayout* main = new QVBoxLayout(m_dashboardPage);
+    main->setContentsMargins(24, 24, 24, 24);
+    main->setSpacing(16);
+
+    // Title
     QLabel* title = new QLabel("Панель менеджера");
-    title->setStyleSheet("font-weight: bold; font-size: 18px;");
-    header->addWidget(title);
-    header->addStretch();
+    QFont titleFont; titleFont.setPointSize(16); titleFont.setBold(true);
+    title->setFont(titleFont);
+    main->addWidget(title);
 
-    main->addLayout(header);
+    // Welcome message
+    QLabel* welcome = new QLabel("Выберите действие в левом меню для начала работы.");
+    welcome->setStyleSheet("color: #666; font-size: 11pt;");
+    main->addWidget(welcome);
 
-    // Clinic management buttons
-    QHBoxLayout* clinicBtns = new QHBoxLayout();
-    m_viewSchedulesBtn = new QPushButton("📅 Управление расписанием");
-    m_managePatientsBtn = new QPushButton("👥 Управление пациентами");
-    m_bulkOpsBtn = new QPushButton("🛠 Массовые операции");
-    clinicBtns->addWidget(m_viewSchedulesBtn);
-    clinicBtns->addWidget(m_managePatientsBtn);
-    clinicBtns->addWidget(m_bulkOpsBtn);
-    clinicBtns->addStretch();
-    main->addLayout(clinicBtns);
+    main->addSpacing(24);
 
-    m_appointmentsList = new QListWidget();
-    main->addWidget(m_appointmentsList, 1);
+    // Quick action cards
+    QHBoxLayout* cardsLayout = new QHBoxLayout();
+    cardsLayout->setSpacing(16);
 
-    QHBoxLayout* btns = new QHBoxLayout();
-    m_addBtn = new QPushButton("➕ Записать");
-    m_cancelBtn = new QPushButton("✖ Отменить запись");
-    m_rescheduleBtn = new QPushButton("🔁 Перенести");
-    btns->addWidget(m_addBtn);
-    btns->addWidget(m_rescheduleBtn);
-    btns->addWidget(m_cancelBtn);
-    btns->addStretch();
-    main->addLayout(btns);
+    // Card 1: Schedule
+    QWidget* scheduleCard = new QWidget();
+    QVBoxLayout* scheduleCardLayout = new QVBoxLayout(scheduleCard);
+    scheduleCardLayout->setContentsMargins(16, 16, 16, 16);
+    scheduleCard->setStyleSheet("background-color: #f0f4f8; border-radius: 8px;");
+    QLabel* scheduleTitle = new QLabel("📅 Управление расписанием");
+    QFont cardFont; cardFont.setPointSize(12); cardFont.setBold(true);
+    scheduleTitle->setFont(cardFont);
+    scheduleCardLayout->addWidget(scheduleTitle);
+    QLabel* scheduleDesc = new QLabel("Просмотр и управление расписанием врачей, создание записей.");
+    scheduleDesc->setWordWrap(true);
+    scheduleDesc->setStyleSheet("color: #666; margin-top: 8px;");
+    scheduleCardLayout->addWidget(scheduleDesc);
+    cardsLayout->addWidget(scheduleCard);
 
-    connect(m_addBtn, &QPushButton::clicked, this, &ManagerWidget::onAddAppointment);
-    connect(m_cancelBtn, &QPushButton::clicked, this, &ManagerWidget::onCancelAppointment);
-    connect(m_rescheduleBtn, &QPushButton::clicked, this, &ManagerWidget::onRescheduleAppointment);
+    // Card 2: Patients
+    QWidget* patientsCard = new QWidget();
+    QVBoxLayout* patientsCardLayout = new QVBoxLayout(patientsCard);
+    patientsCardLayout->setContentsMargins(16, 16, 16, 16);
+    patientsCard->setStyleSheet("background-color: #f0f4f8; border-radius: 8px;");
+    QLabel* patientsTitle = new QLabel("👥 Управление пациентами");
+    patientsTitle->setFont(cardFont);
+    patientsCardLayout->addWidget(patientsTitle);
+    QLabel* patientsDesc = new QLabel("Добавление, редактирование и управление профилями пациентов.");
+    patientsDesc->setWordWrap(true);
+    patientsDesc->setStyleSheet("color: #666; margin-top: 8px;");
+    patientsCardLayout->addWidget(patientsDesc);
+    cardsLayout->addWidget(patientsCard);
 
-    connect(m_viewSchedulesBtn, &QPushButton::clicked, this, &ManagerWidget::onViewClinicSchedules);
-    connect(m_managePatientsBtn, &QPushButton::clicked, this, &ManagerWidget::onManagePatients);
-    connect(m_bulkOpsBtn, &QPushButton::clicked, this, &ManagerWidget::onBulkOperations);
+    // Card 3: Bulk operations
+    QWidget* bulkCard = new QWidget();
+    QVBoxLayout* bulkCardLayout = new QVBoxLayout(bulkCard);
+    bulkCardLayout->setContentsMargins(16, 16, 16, 16);
+    bulkCard->setStyleSheet("background-color: #f0f4f8; border-radius: 8px;");
+    QLabel* bulkTitle = new QLabel("🛠 Массовые операции");
+    bulkTitle->setFont(cardFont);
+    bulkCardLayout->addWidget(bulkTitle);
+    QLabel* bulkDesc = new QLabel("Создание слотов расписания, пакетные операции.");
+    bulkDesc->setWordWrap(true);
+    bulkDesc->setStyleSheet("color: #666; margin-top: 8px;");
+    bulkCardLayout->addWidget(bulkDesc);
+    cardsLayout->addWidget(bulkCard);
 
-    refreshAppointments();
+    main->addLayout(cardsLayout);
+    main->addStretch();
 }
 
-void ManagerWidget::setUser(const LoginUser &user) {
+void ManagerWidget::createSidebar() {
+    // Sidebar is created in createSidebarWidget()
+}
+
+void ManagerWidget::onSidebarItemClicked(int index) {
+    m_stack->setCurrentIndex(index);
+    updateSidebarHighlight(index);
+}
+
+void ManagerWidget::updateSidebarHighlight(int pageIndex) {
+    for (int i = 0; i < m_sidebar->count(); ++i) {
+        m_sidebar->item(i)->setSelected(i == pageIndex);
+    }
+}
+
+void ManagerWidget::setUser(const LoginUser& user) {
     m_user = user;
-    refreshAppointments();
-}
-
-void ManagerWidget::refreshAppointments() {
-    m_appointmentsList->clear();
-    QList<Appointment> appts = m_dataManager.getAllAppointments();
-    for (const Appointment &a : appts) {
-        Patient p = m_dataManager.getPatientById(a.id_patient);
-        Doctor d = m_dataManager.getDoctorById(a.id_doctor);
-        QString text = QString("#%1 — %2 — %3 — %4")
-            .arg(a.id_ap)
-            .arg(p.fullName().isEmpty() ? QString("Пациент %1").arg(a.id_patient) : p.fullName())
-            .arg(d.fullName().isEmpty() ? QString("Врач %1").arg(a.id_doctor) : d.fullName())
-            .arg(a.date.isValid() ? a.date.toString("dd.MM.yyyy HH:mm") : QString("—"));
-
-        QListWidgetItem* it = new QListWidgetItem(text);
-        it->setData(Qt::UserRole, a.id_ap);
-        m_appointmentsList->addItem(it);
+    if (!m_userNameLabel || !m_userEmailLabel) return;
+    
+    // Load manager info from database
+    Manager manager = m_dataManager.getManagerById(user.id);
+    m_userNameLabel->setText(manager.fullName().isEmpty() ? "Менеджер" : manager.fullName());
+    m_userEmailLabel->setText(manager.email.isEmpty() ? "email@clinic.com" : manager.email);
+    
+    // Pass user to family page that needs it
+    if (m_familyPage) {
+        m_familyPage->setUser(user);
     }
-}
-
-void ManagerWidget::onAddAppointment() {
-    // Use existing AppointmentBookingWidget in a dialog so manager can create appointment
-    QDialog dlg(this);
-    dlg.setWindowTitle("Запись — менеджер");
-    QVBoxLayout* l = new QVBoxLayout(&dlg);
-    AppointmentBookingWidget* booking = new AppointmentBookingWidget(&dlg);
-    LoginUser managerUser(LoginUser::MANAGER, m_user.id, m_user.name);
-    booking->setUser(managerUser);
-    l->addWidget(booking);
-    dlg.resize(800, 600);
-    dlg.exec();
-
-    // After dialog closed, refresh list (booking widget writes directly to data)
-    refreshAppointments();
-}
-
-void ManagerWidget::onCancelAppointment() {
-    QListWidgetItem* it = m_appointmentsList->currentItem();
-    if (!it) {
-        QMessageBox::warning(this, "Ошибка", "Выберите запись для отмены");
-        return;
-    }
-    int id = it->data(Qt::UserRole).toInt();
-
-    Appointment ap = m_dataManager.getAppointmentById(id);
-    if (ap.id_ap <= 0) {
-        QMessageBox::warning(this, "Ошибка", "Не удалось найти выбранную запись");
-        return;
-    }
-
-    if (QMessageBox::question(this, "Подтвердить", QString("Отменить запись #%1?").arg(id)) != QMessageBox::Yes) {
-        return;
-    }
-
-    // If appointment linked to a schedule, free it
-    if (ap.id_ap_sch > 0) {
-        AppointmentSchedule sch = m_dataManager.getScheduleById(ap.id_ap_sch);
-        if (sch.id_ap_sch > 0) {
-            sch.status = "free";
-            m_dataManager.updateSchedule(sch);
-        }
-    }
-
-    m_dataManager.deleteAppointment(id);
-    QMessageBox::information(this, "Готово", "Запись отменена");
-    refreshAppointments();
-}
-
-void ManagerWidget::onRescheduleAppointment() {
-    QListWidgetItem* it = m_appointmentsList->currentItem();
-    if (!it) {
-        QMessageBox::warning(this, "Ошибка", "Выберите запись для переноса");
-        return;
-    }
-    int id = it->data(Qt::UserRole).toInt();
-    Appointment ap = m_dataManager.getAppointmentById(id);
-    if (ap.id_ap <= 0) {
-        QMessageBox::warning(this, "Ошибка", "Не удалось найти выбранную запись");
-        return;
-    }
-
-    // Load available schedules for the doctor
-    QList<AppointmentSchedule> avail = m_dataManager.getAvailableSchedules(ap.id_doctor);
-    if (avail.isEmpty()) {
-        QMessageBox::information(this, "Нет слотов", "Нет доступных слотов для данного врача");
-        return;
-    }
-
-    QStringList items;
-    for (const AppointmentSchedule &s : avail) {
-        items << QString("%1 — %2").arg(s.id_ap_sch).arg(s.time_from.toString("dd.MM.yyyy HH:mm"));
-    }
-
-    bool ok = false;
-    QString choice = QInputDialog::getItem(this, "Выберите новый слот", "Доступные слоты:", items, 0, false, &ok);
-    if (!ok || choice.isEmpty()) return;
-
-    // Extract schedule id from chosen string (format: id — date)
-    int newSchId = choice.split(" — ").first().toInt();
-    if (newSchId <= 0) {
-        QMessageBox::warning(this, "Ошибка", "Некорректный слот");
-        return;
-    }
-
-    // Free old schedule if exists
-    if (ap.id_ap_sch > 0) {
-        AppointmentSchedule oldSch = m_dataManager.getScheduleById(ap.id_ap_sch);
-        if (oldSch.id_ap_sch > 0) {
-            oldSch.status = "free";
-            m_dataManager.updateSchedule(oldSch);
-        }
-    }
-
-    // Book new schedule
-    AppointmentSchedule newSch = m_dataManager.getScheduleById(newSchId);
-    if (newSch.id_ap_sch <= 0) {
-        QMessageBox::warning(this, "Ошибка", "Не удалось загрузить выбранный слот");
-        return;
-    }
-    newSch.status = "booked";
-    m_dataManager.updateSchedule(newSch);
-
-    // Update appointment
-    ap.id_ap_sch = newSch.id_ap_sch;
-    ap.date = newSch.time_from;
-    ap.id_doctor = newSch.id_doctor;
-    m_dataManager.updateAppointment(ap);
-
-    QMessageBox::information(this, "Готово", "Запись успешно перенесена");
-    refreshAppointments();
 }
 
 void ManagerWidget::onViewClinicSchedules() {
-    ManagerScheduleViewer dlg(this);
-    // Allow manager to click and create bookings from the schedule viewer
-    dlg.exec();
+    if (m_stack) {
+        m_stack->setCurrentIndex(SchedulePage);
+        updateSidebarHighlight(SchedulePage);
+    }
 }
 
 void ManagerWidget::onManagePatients() {
-    PatientManagementDialog dlg(this);
-    dlg.exec();
-    // refresh appointments/patients lists after possible changes
-    refreshAppointments();
+    if (m_stack) {
+        m_stack->setCurrentIndex(PatientPage);
+        updateSidebarHighlight(PatientPage);
+    }
 }
 
 void ManagerWidget::onBulkOperations() {
-    BulkOperationsDialog dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        QMessageBox::information(this, "Готово", "Массовые операции применены");
-        refreshAppointments();
+    if (m_stack) {
+        m_stack->setCurrentIndex(BulkOpsPage);
+        updateSidebarHighlight(BulkOpsPage);
+    }
+}
+
+void ManagerWidget::goToDashboard() {
+    if (m_stack) {
+        m_stack->setCurrentIndex(DashboardPage);
+        updateSidebarHighlight(DashboardPage);
     }
 }

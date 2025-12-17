@@ -57,6 +57,8 @@ public:
     void setUser(const LoginUser &user);
     // Preselect doctor and optionally a schedule id (then jump to patient selection)
     void setInitialSelection(int doctorId, int scheduleId = -1);
+    // REQ-017: Set reschedule mode with appointment to reschedule
+    void setRescheduleMode(int appointmentId, int doctorId);
 
 private slots:
     void onSpecialtySelected(int specialtyId);
@@ -76,6 +78,7 @@ private:
     DataManager m_dataManager;
     QStackedWidget* m_stackedWidget;
     QLabel* m_titleLabel;
+    QLabel* m_progressLabel;
     QPushButton* m_backButton;
 
     // Booking state
@@ -85,6 +88,12 @@ private:
     QDateTime m_selectedDateTime;
     Patient m_selectedPatient;
     LoginUser m_currentUser;
+    bool m_isFromManager = false;  // Track if booking is initiated from manager
+    
+    // REQ-017: Reschedule mode
+    bool m_isRescheduleMode = false;
+    int m_rescheduleAppointmentId = -1;
+    int m_oldScheduleId = -1;
 };
 
 #endif // APPOINTMENTBOOKINGWIDGET_H
