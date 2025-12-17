@@ -72,8 +72,8 @@ void CreatePatientDialog::buildUI() {
     form->addRow("Полис ОМС:", omsEdit);
 
     statusLabel = new QLabel("");
-    createButton = new QPushButton("Добавить");
-    cancelButton = new QPushButton("Отмена");
+    createButton = new QPushButton("➕ Добавить");
+    cancelButton = new QPushButton("❌ Отмена");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(createButton);

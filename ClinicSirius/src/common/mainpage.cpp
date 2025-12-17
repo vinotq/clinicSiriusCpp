@@ -204,7 +204,6 @@ void MainPage::buildHeader(QHBoxLayout *headerLayout) {
 
     userMenu = new QMenu(userMenuButton);
     profileAction = userMenu->addAction("Профиль");
-    profileAction->setText(QString::fromUtf8("👤 ") + profileAction->text());
     settingsAction = userMenu->addAction("Настройки");
     settingsAction->setText(QString::fromUtf8("⚙️ ") + settingsAction->text());
     userMenu->addSeparator();
@@ -289,7 +288,7 @@ void MainPage::buildLanding() {
     connect(profileActionButton, &QPushButton::clicked, this, [this]() { showProfile(false); });
     actionsLayout->addWidget(profileActionButton);
 
-    QPushButton *bookingActionButton = new QPushButton("✅ Записать прием");
+    QPushButton *bookingActionButton = new QPushButton("📅 Записать прием");
     bookingActionButton->setMinimumHeight(45);
     bookingActionButton->setMinimumWidth(220);
     bookingActionButton->setProperty("class", "hero-booking-btn");
@@ -553,7 +552,7 @@ void MainPage::buildDoctorLanding() {
     QHBoxLayout *actionsLayout = new QHBoxLayout();
     actionsLayout->setSpacing(15);
 
-        QPushButton *scheduleButton = new QPushButton(QString::fromUtf8("👩\u200D⚕️ ") + "Расписание");
+    QPushButton *scheduleButton = new QPushButton("📄 Расписание");
     scheduleButton->setMinimumHeight(45);
     scheduleButton->setMinimumWidth(220);
     scheduleButton->setProperty("class", "hero-booking-btn");
@@ -562,7 +561,7 @@ void MainPage::buildDoctorLanding() {
     });
     actionsLayout->addWidget(scheduleButton);
 
-    QPushButton *historyButton = new QPushButton(QString::fromUtf8("🕘 ") + "История приёмов пациента");
+    QPushButton *historyButton = new QPushButton("📁 История приёмов пациента");
     historyButton->setMinimumHeight(45);
     historyButton->setMinimumWidth(220);
     historyButton->setProperty("class", "hero-history-btn");

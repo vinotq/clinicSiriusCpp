@@ -11,13 +11,11 @@ PatientSelectionDialog::PatientSelectionDialog(QWidget *parent, const QList<Pati
     setMinimumWidth(500);
     setMinimumHeight(400);
 
-    // Use provided patients or load all
     if (!availablePatients.isEmpty()) {
         m_allPatients = availablePatients;
     } else {
         m_allPatients = m_dataManager.getAllPatients();
     }
-    // Sort alphabetically
     std::sort(m_allPatients.begin(), m_allPatients.end(), [](const Patient &a, const Patient &b){
         return a.fullName().toLower() < b.fullName().toLower();
     });
@@ -36,7 +34,6 @@ void PatientSelectionDialog::buildUI() {
     title->setFont(titleFont);
     main->addWidget(title);
 
-    // Search field
     QHBoxLayout *searchLay = new QHBoxLayout();
     QLabel *searchLabel = new QLabel("Поиск:");
     m_searchEdit = new QLineEdit();
@@ -45,20 +42,17 @@ void PatientSelectionDialog::buildUI() {
     searchLay->addWidget(m_searchEdit);
     main->addLayout(searchLay);
 
-    // Patient list
     m_patientList = new QListWidget();
     m_patientList->setSelectionMode(QAbstractItemView::SingleSelection);
     main->addWidget(m_patientList);
 
-    // Status label
     m_statusLabel = new QLabel();
-    m_statusLabel->setStyleSheet("color: #666;");
+    m_statusLabel->setProperty("class", "patient-status-label");
     main->addWidget(m_statusLabel);
 
-    // Buttons
     QHBoxLayout *btnLay = new QHBoxLayout();
 
-    m_createBtn = new QPushButton("+ Создать нового");
+    m_createBtn = new QPushButton("➕ Создать нового");
     m_selfBtn = new QPushButton("👤 Выбрать себя");
     m_selectBtn = new QPushButton("✅ Выбрать");
     m_selectBtn->setEnabled(false);
@@ -71,7 +65,6 @@ void PatientSelectionDialog::buildUI() {
     btnLay->addWidget(m_cancelBtn);
     main->addLayout(btnLay);
 
-    // Connections
     connect(m_searchEdit, &QLineEdit::textChanged, this, &PatientSelectionDialog::onSearchTextChanged);
     connect(m_patientList, &QListWidget::itemClicked, this, &PatientSelectionDialog::onListItemSelected);
     connect(m_patientList, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *){
@@ -79,7 +72,6 @@ void PatientSelectionDialog::buildUI() {
     });
     connect(m_createBtn, &QPushButton::clicked, this, &PatientSelectionDialog::onCreateNew);
     connect(m_selfBtn, &QPushButton::clicked, this, [this](){
-        // Try to find "Self" option or auto-select if current user is in available list
         if (!m_allPatients.isEmpty()) {
             m_patientList->setCurrentRow(0);
             onListItemSelected(m_patientList->item(0));
@@ -104,7 +96,6 @@ void PatientSelectionDialog::updatePatientList(const QString &filter) {
         }
     }
 
-    // Update status
     if (filter.isEmpty()) {
         m_statusLabel->setText(QString("Всего пациентов: %1").arg(m_allPatients.size()));
     } else {
@@ -126,21 +117,16 @@ void PatientSelectionDialog::onListItemSelected(QListWidgetItem *item) {
 }
 
 void PatientSelectionDialog::onCreateNew() {
-    // Open patient creation dialog
     CreatePatientDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
         Patient p = dlg.getCreatedPatient();
-        // Add to datamanager
         m_dataManager.addPatient(p);
-        // Add to our list
         m_allPatients.append(p);
         std::sort(m_allPatients.begin(), m_allPatients.end(), [](const Patient &a, const Patient &b){
             return a.fullName().toLower() < b.fullName().toLower();
         });
-        // Update display and select the new patient
         m_searchEdit->clear();
         updatePatientList();
-        // Find and select the new patient
         for (int i = 0; i < m_patientList->count(); ++i) {
             QListWidgetItem *item = m_patientList->item(i);
             if (item->data(Qt::UserRole).toInt() == p.id_patient) {

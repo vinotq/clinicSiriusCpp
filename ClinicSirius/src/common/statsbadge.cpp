@@ -62,14 +62,13 @@ void StatsBadge::setLabel(const QString &label) {
 
 void StatsBadge::setIcon(const QString &iconPath) {
     if (!iconPath.isEmpty()) {
-            // Use emoji mapping instead of loading image files
             QString key = iconPath.toLower();
             QString emoji = "🔹";
             if (key.contains("up")) emoji = "⬆️";
             else if (key.contains("down")) emoji = "⬇️";
-            else if (key.contains("check")) emoji = "✅";
-            else if (key.contains("cancel") || key.contains("delete")) emoji = "❌";
             else if (key.contains("doctor") || key.contains("medical")) emoji = QString::fromUtf8("👩\u200D⚕️");
+            else if (key.contains("check")) emoji = "✅";
+            else if (key.contains("cancel") || key.contains("delete")) emoji = "🗑";
             iconLabel->setText(emoji);
             QFont f = iconLabel->font(); f.setPointSize(12); iconLabel->setFont(f);
     }

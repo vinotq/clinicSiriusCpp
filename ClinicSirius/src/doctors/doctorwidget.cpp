@@ -12,6 +12,7 @@
 #include <QGroupBox>
 #include <QMessageBox>
 #include <QStackedWidget>
+#include <QSpinBox>
 #include <numeric>
 
 DoctorWidget::DoctorWidget(QWidget *parent)
@@ -45,20 +46,17 @@ void DoctorWidget::buildMainPage() {
     layout->addWidget(mainTitleLabel);
     
     // Кнопки на весь функционал
-    viewScheduleButton = new QPushButton("Посмотреть расписание");
-    viewScheduleButton->setText(QString::fromUtf8("👩\u200D⚕️ ") + viewScheduleButton->text());
+    viewScheduleButton = new QPushButton("📅 Посмотреть расписание");
     viewScheduleButton->setIconSize(QSize(18,18));
     viewScheduleButton->setMinimumHeight(60);
     layout->addWidget(viewScheduleButton);
     
-    addSlotButton = new QPushButton("Добавить окно для приема");
-    addSlotButton->setText(QString::fromUtf8("✅ ") + addSlotButton->text());
+    addSlotButton = new QPushButton("➕ Добавить окно для приема");
     addSlotButton->setIconSize(QSize(16,16));
     addSlotButton->setMinimumHeight(60);
     layout->addWidget(addSlotButton);
     
-    bookAppointmentButton = new QPushButton("Записать пациента на прием");
-    bookAppointmentButton->setText(QString::fromUtf8("✅ ") + bookAppointmentButton->text());
+    bookAppointmentButton = new QPushButton("📝 Записать пациента на прием");
     bookAppointmentButton->setIconSize(QSize(16,16));
     bookAppointmentButton->setMinimumHeight(60);
     layout->addWidget(bookAppointmentButton);
@@ -101,8 +99,23 @@ void DoctorWidget::buildSchedulePage() {
     weekNav->addWidget(nextWeekButton);
     layout->addLayout(weekNav);
     
+    // Time slot duration input (for grid granularity in schedule)
+    QHBoxLayout *timeSlotLayout = new QHBoxLayout();
+    timeSlotLayout->addStretch();
+    QLabel *timeSlotLabel = new QLabel("⏱️ Время приема (мин):");
+    timeSlotDurationSpinBox = new QSpinBox();
+    timeSlotDurationSpinBox->setMinimum(5);
+    timeSlotDurationSpinBox->setMaximum(120);
+    timeSlotDurationSpinBox->setValue(20);
+    timeSlotDurationSpinBox->setSuffix(" мин");
+    timeSlotDurationSpinBox->setMaximumWidth(100);
+    selectedIntervalMinutes = 20;
+    timeSlotLayout->addWidget(timeSlotLabel);
+    timeSlotLayout->addWidget(timeSlotDurationSpinBox);
+    layout->addLayout(timeSlotLayout);
+    
     scheduleTable = new QTableWidget();
-    scheduleTable->setColumnCount(8); // one for time + 7 days
+    scheduleTable->setColumnCount(8);
     scheduleTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     scheduleTable->verticalHeader()->setVisible(false);
     scheduleTable->setEditTriggers(QTableWidget::NoEditTriggers);
@@ -111,15 +124,12 @@ void DoctorWidget::buildSchedulePage() {
     
     // Кнопки действий
     QHBoxLayout *actionsLayout = new QHBoxLayout();
-    bookFromScheduleButton = new QPushButton("Записать на выбранный слот");
-    bookFromScheduleButton->setText(QString::fromUtf8("✅ ") + bookFromScheduleButton->text());
+    bookFromScheduleButton = new QPushButton("📝 Записать на выбранный слот");
     bookFromScheduleButton->setIconSize(QSize(16,16));
-    deleteSlotButton = new QPushButton("Удалить слот");
-    deleteSlotButton->setText(QString::fromUtf8("❌ ") + deleteSlotButton->text());
+    deleteSlotButton = new QPushButton("🗑 Удалить слот");
     deleteSlotButton->setIconSize(QSize(16,16));
     // Новая кнопка
-    addSlotInScheduleButton = new QPushButton("Добавить окно для приема");
-    addSlotInScheduleButton->setText(QString::fromUtf8("✅ ") + addSlotInScheduleButton->text());
+    addSlotInScheduleButton = new QPushButton("➕ Добавить окно для приема");
     addSlotInScheduleButton->setIconSize(QSize(16,16));
     backButton = new QPushButton("Назад");
     backButton->setText("← " + backButton->text());
@@ -136,6 +146,12 @@ void DoctorWidget::buildSchedulePage() {
     connect(prevWeekButton, &QPushButton::clicked, this, &DoctorWidget::onPrevWeek);
     connect(nextWeekButton, &QPushButton::clicked, this, &DoctorWidget::onNextWeek);
     connect(todayButton, &QPushButton::clicked, this, &DoctorWidget::onToday);
+    
+    // Connect time slot duration spin box to reload schedule with new duration
+    connect(timeSlotDurationSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int value) {
+        selectedIntervalMinutes = value;
+        loadSchedule();
+    });
     
     connect(scheduleTable, &QTableWidget::cellClicked, this, &DoctorWidget::onCellClicked);
     connect(deleteSlotButton, &QPushButton::clicked, this, [this]() {
@@ -249,11 +265,20 @@ void DoctorWidget::loadSchedule() {
     QStringList headers;
     headers << "Время";
     QDate start = scheduleStartDate;
+    
+    // Calculate start date to be Monday
+    int dayOfWeek = start.dayOfWeek(); // 1 = Monday, 7 = Sunday (Qt default)
+    if (dayOfWeek != 1) {
+        start = start.addDays(1 - dayOfWeek); // Move to Monday of the same week
+    }
+    
     // Update week label showing range
     if (weekLabel) {
         QString label = QString("%1 — %2").arg(start.toString("dd.MM.yyyy"), start.addDays(6).toString("dd.MM.yyyy"));
         weekLabel->setText(label);
     }
+    QDate today = QDate::currentDate();
+    
     for (int i = 0; i < 7; ++i) {
         QDate dt = start.addDays(i);
         QString dayName;
@@ -272,33 +297,11 @@ void DoctorWidget::loadSchedule() {
     scheduleTable->setColumnCount(headers.size());
     scheduleTable->setHorizontalHeaderLabels(headers);
 
-    // Collect all schedules for the doctor to determine minimal interval
+    // Collect all schedules for the doctor
     QList<AppointmentSchedule> schedules = dataManager.getDoctorSchedules(currentUser.id);
 
-    // Determine grid step (in seconds) using GCD of all schedule durations and their offsets from day start.
-    // Use std::gcd from C++17; start with minimal interval of 60 seconds (1 minute)
-    qint64 gcdSeconds = 60; // Minimal step 1 minute
-    const qint64 defaultIntervalSec = 20 * 60; // 20 minutes
-    const qint64 dayStartSec = qint64(6 * 60 * 60);
-
-    for (const AppointmentSchedule &s : schedules) {
-        qint64 durSec = s.time_from.secsTo(s.time_to);
-        if (durSec > 0) {
-            gcdSeconds = std::gcd(gcdSeconds, durSec);
-        }
-        // offset from day start in seconds (normalized to 24h)
-        qint64 startSec = qint64(s.time_from.time().hour()) * 3600 + qint64(s.time_from.time().minute()) * 60 + qint64(s.time_from.time().second());
-        qint64 offsetSec = startSec - dayStartSec;
-        if (offsetSec > 0) {
-            gcdSeconds = std::gcd(gcdSeconds, offsetSec);
-        }
-    }
-
-    if (gcdSeconds < 60) gcdSeconds = 60; // Ensure minimum 1 minute step
-
-    // Convert to minutes grid step
-    int minimalInterval = int(gcdSeconds / 60);
-    if (minimalInterval < 1) minimalInterval = 1;
+    // Use the interval selected by the user in the combo box
+    int minimalInterval = selectedIntervalMinutes;
 
     // Build rows from 6:00 to 22:00 with step = minimalInterval minutes
     const int dayStartMin = 6 * 60;
@@ -359,6 +362,32 @@ void DoctorWidget::loadSchedule() {
 
         if (rowSpan > 1) {
             scheduleTable->setSpan(startIndex, column, rowSpan, 1);
+        }
+    }
+    
+    // Highlight today's column with a light background color
+    int todayColumn = -1;
+    for (int i = 0; i < 7; ++i) {
+        QDate dt = start.addDays(i);
+        if (dt == today) {
+            todayColumn = 1 + i;
+            break;
+        }
+    }
+    
+    if (todayColumn >= 0) {
+        QColor todayBgColor = QColor(200, 220, 255); // Light blue
+        for (int r = 0; r < scheduleTable->rowCount(); ++r) {
+            QTableWidgetItem *item = scheduleTable->item(r, todayColumn);
+            if (!item) {
+                item = new QTableWidgetItem();
+                scheduleTable->setItem(r, todayColumn, item);
+            }
+            // Only apply background if no other content (to avoid overwriting schedule blocks)
+            if (item->data(Qt::UserRole).toInt() <= 0) {
+                item->setBackground(todayBgColor);
+                item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
+            }
         }
     }
 }

@@ -1,5 +1,0 @@
-[
-  {"id": 1, "fname": "Иван", "lname": "Сидоров", "email": "sidorov@clinicsirius.ru", "password": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c"},
-  {"id": 2, "fname": "Мария", "lname": "Петрова", "email": "petrova@clinicsirius.ru", "password": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c"},
-  {"id": 3, "fname": "Петр", "lname": "Иванов", "email": "ivanov@clinicsirius.ru", "password": "9b8769a4a742959a2d0298c36fb70623f2dfacda8436237df08d8dfd5b37374c"}
-]

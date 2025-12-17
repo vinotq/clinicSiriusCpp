@@ -44,7 +44,7 @@ void PatientAppointmentsViewer::buildUI() {
     main->addWidget(m_header);
 
     // CHANGED: Add create appointment button
-    QPushButton *addBtn = new QPushButton("Создать приём");
+    QPushButton *addBtn = new QPushButton("📅 Создать приём");
     main->addWidget(addBtn);
     connect(addBtn, &QPushButton::clicked, this, &PatientAppointmentsViewer::onAddAppointmentClicked);
 
@@ -136,9 +136,9 @@ void PatientAppointmentsViewer::onTableContextMenu(const QPoint &pos) {
     if (!found) return;
 
     QMenu menu;
-    QAction *reschedule = menu.addAction("Перенести/Изменить");
-    QAction *editPatient = menu.addAction("Редактировать пациента"); // CHANGED: CRUD Edit patient
-    QAction *cancel = menu.addAction("Отменить запись");
+    QAction *reschedule = menu.addAction("🕒 Перенести приём");
+    QAction *editPatient = menu.addAction("✍️ Редактировать пациента");
+    QAction *cancel = menu.addAction("❌ Отменить запись");
     QAction *selected = menu.exec(m_table->viewport()->mapToGlobal(pos));
     if (!selected) return;
 

@@ -8,6 +8,7 @@
 #include <QDate>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSpinBox>
 #include "models.h"
 #include "datamanager.h"
 
@@ -24,14 +25,12 @@ signals:
     void requestPageChange(int pageIndex);
 
 private slots:
-    // Main page
     void onViewSchedule();
     void onAddSlot();
     void onBookAppointment();
     void onProfileClicked();
     void onSettingsClicked();
 
-    // Schedule page
     void onCellClicked(int row, int column);
     void loadSchedule();
     void onBackFromSchedule();
@@ -39,7 +38,6 @@ private slots:
     void onNextWeek();
     void onToday();
 
-    // After visit completion
     void onVisitCompleted();
 
 private:
@@ -56,19 +54,20 @@ private:
     int mainPageIndex;
     int schedulePageIndex;
 
-    // Main page widgets
     QLabel *mainTitleLabel;
     QPushButton *viewScheduleButton;
     QPushButton *addSlotButton;
     QPushButton *bookAppointmentButton;
 
-    // Schedule page widgets
+    QSpinBox *timeSlotDurationSpinBox = nullptr;
+    int selectedIntervalMinutes = 20;
+
     QLabel *scheduleTitleLabel;
     QTableWidget *scheduleTable;
     QPushButton *bookFromScheduleButton;
     QPushButton *backButton;
     QPushButton *deleteSlotButton;
-    QPushButton *addSlotInScheduleButton; // новая кнопка в расписании
+    QPushButton *addSlotInScheduleButton;
     QPushButton *prevWeekButton;
     QPushButton *nextWeekButton;
     QPushButton *todayButton;
@@ -76,4 +75,4 @@ private:
     QDate scheduleStartDate;
 };
 
-#endif // DOCTORWIDGET_H
+#endif

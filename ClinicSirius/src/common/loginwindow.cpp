@@ -11,6 +11,9 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QStyle>
+#include <QPlainTextEdit>
+#include <QClipboard>
+#include <QGuiApplication>
 
 LoginWindow::LoginWindow(QWidget *parent)
     : QWidget(parent)
@@ -23,17 +26,15 @@ LoginWindow::~LoginWindow() {
 }
 
 void LoginWindow::setupUI() {
-    // Основной лейаут
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(40, 40, 40, 40);
     mainLayout->setSpacing(20);
 
-    // Лого/Заголовок (иконка + текст)
     QHBoxLayout *logoLayout = new QHBoxLayout();
     logoLayout->setAlignment(Qt::AlignCenter);
     QLabel *logoIcon = new QLabel("🏥");
     logoIcon->setProperty("class", "header-logo-icon");
-    QFont lic; lic.setPointSize(20); logoIcon->setFont(lic);
+    QFont lic; lic.setPointSize(400); logoIcon->setFont(lic);
     logoIcon->setContentsMargins(0,0,8,0);
     QLabel *logoText = new QLabel("Клиника «Сириус»");
     QFont logoFont;
@@ -45,7 +46,6 @@ void LoginWindow::setupUI() {
     logoLayout->addWidget(logoText);
     mainLayout->addLayout(logoLayout);
 
-    // Приветствие
     QLabel *welcomeLabel = new QLabel("Добро пожаловать");
     QFont welcomeFont;
     welcomeFont.setPointSize(18);
@@ -64,11 +64,8 @@ void LoginWindow::setupUI() {
 
     mainLayout->addSpacing(20);
 
-    // Email/Username поле
     QLabel *emailLabel = new QLabel("Email");
-    QFont fieldLabelFont;
-    fieldLabelFont.setPointSize(10);
-    emailLabel->setFont(fieldLabelFont);
+    emailLabel->setProperty("class", "field-label");
     mainLayout->addWidget(emailLabel);
 
     emailInput = new QLineEdit();
@@ -76,9 +73,8 @@ void LoginWindow::setupUI() {
     emailInput->setMinimumHeight(40);
     mainLayout->addWidget(emailInput);
 
-    // Пароль поле
     QLabel *passwordLabel = new QLabel("Пароль");
-    passwordLabel->setFont(fieldLabelFont);
+    passwordLabel->setProperty("class", "field-label");
     mainLayout->addWidget(passwordLabel);
 
     QHBoxLayout *passwordLayout = new QHBoxLayout();
@@ -99,31 +95,28 @@ void LoginWindow::setupUI() {
 
     mainLayout->addSpacing(10);
 
-    // Забыли пароль
-    QPushButton *forgotButton = new QPushButton("Забыли пароль?");
+    QPushButton *forgotButton = new QPushButton("🔑 Забыли пароль?");
+    forgotButton->setToolTip("Напомнить пароль");
     forgotButton->setFlat(true);
     forgotButton->setProperty("class", "login-forgot");
     mainLayout->addWidget(forgotButton, 0, Qt::AlignRight);
 
     mainLayout->addSpacing(10);
 
-    // Кнопка входа
-    loginButton = new QPushButton("Войти");
+    loginButton = new QPushButton("🔐 Войти");
     loginButton->setMinimumHeight(45);
     loginButton->setFont(QFont("Arial", 12, QFont::Bold));
     connect(loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
     mainLayout->addWidget(loginButton);
 
-    // Разделител
     QLabel *orLabel = new QLabel("или");
     orLabel->setAlignment(Qt::AlignCenter);
     orLabel->setProperty("class", "login-separator");
     mainLayout->addWidget(orLabel);
 
-    // Кнопка регистрации
     QHBoxLayout *registrationLayout = new QHBoxLayout();
     QLabel *noAccountLabel = new QLabel("Нет аккаунта?");
-    registrationButton = new QPushButton("Зарегистрируйтесь");
+    registrationButton = new QPushButton("📝 Зарегистрироваться");
     registrationButton->setFlat(true);
     registrationButton->setProperty("class", "login-forgot");
     connect(registrationButton, &QPushButton::clicked, this, &LoginWindow::onRegistrationClicked);
@@ -133,7 +126,46 @@ void LoginWindow::setupUI() {
     registrationLayout->addStretch();
     mainLayout->addLayout(registrationLayout);
 
-    // Сообщение об ошибке
+    QWidget *testUsersPanel = new QWidget();
+    testUsersPanel->setProperty("class", "test-users-panel");
+    testUsersPanel->setAttribute(Qt::WA_StyledBackground, true);
+    QVBoxLayout *testLayout = new QVBoxLayout(testUsersPanel);
+    testLayout->setContentsMargins(20, 20, 20, 20);
+    testLayout->setSpacing(8);
+
+    QLabel *testTitle = new QLabel("ℹ️ Тестовые пользователи");
+    QFont testTitleFont;
+    testTitleFont.setPointSize(11);
+    testTitleFont.setBold(true);
+    testTitle->setFont(testTitleFont);
+    testLayout->addWidget(testTitle);
+
+    testUsersText = new QPlainTextEdit();
+    testUsersText->setProperty("class", "test-users-text");
+    testUsersText->setAttribute(Qt::WA_StyledBackground, true);
+    testUsersText->setReadOnly(true);
+    
+    testUsersText->setPlainText(
+        "тестовые пользователи:\n\n"
+        "пациент  –  anna.ivanova@mail.ru\n"
+        "доктор   –  igor.semenov@clinicsirius.ru\n"
+        "менеджер –  sidorov@clinicsirius.ru\n"
+        "админ    –  admin@clinicsirius.ru\n\n"
+        "пароль ко всем пользователям – pass123"
+    );
+    testLayout->addWidget(testUsersText);
+
+    QHBoxLayout *copyLayout = new QHBoxLayout();
+    copyLayout->addStretch();
+    copyUsersButton = new QPushButton("📋 Скопировать данные");
+    copyUsersButton->setProperty("class", "secondary");
+    copyUsersButton->setMinimumHeight(32);
+    connect(copyUsersButton, &QPushButton::clicked, this, &LoginWindow::copyTestUsersToClipboard);
+    copyLayout->addWidget(copyUsersButton);
+    testLayout->addLayout(copyLayout);
+
+    mainLayout->addWidget(testUsersPanel);
+
     errorLabel = new QLabel();
     errorLabel->setWordWrap(true);
     mainLayout->addWidget(errorLabel);
@@ -158,7 +190,6 @@ void LoginWindow::onLoginClicked() {
 
     qDebug() << "Login attempt for email:" << email;
     
-    // Проверка учетных данных через DataManager
     QString dataPath = QCoreApplication::applicationDirPath() + "/../data";
     DataManager dm(dataPath);
     qDebug() << "Using data path:" << dataPath;
@@ -166,19 +197,17 @@ void LoginWindow::onLoginClicked() {
     int userType = -1;
     bool authenticated = false;
 
-    // Попытка входа для пациента
     qDebug() << "Checking patient...";
     if (dm.patientLoginByEmail(email, password)) {
         Patient patient = dm.getPatientByEmail(email);
         qDebug() << "Patient found:" << patient.id_patient << patient.email;
         if (patient.id_patient > 0) {
             userId = patient.id_patient;
-            userType = 0; // Patient
+            userType = 0;
             authenticated = true;
         }
     }
     
-    // Попытка входа для врача
     if (!authenticated) {
         qDebug() << "Checking doctor...";
         if (dm.doctorLoginByEmail(email, password)) {
@@ -186,13 +215,12 @@ void LoginWindow::onLoginClicked() {
             qDebug() << "Doctor found:" << doctor.id_doctor << doctor.email;
             if (doctor.id_doctor > 0) {
                 userId = doctor.id_doctor;
-                userType = 1; // Doctor
+                userType = 1;
                 authenticated = true;
             }
         }
     }
     
-    // Попытка входа для менеджера
     if (!authenticated) {
         qDebug() << "Checking manager...";
         if (dm.managerLoginByEmail(email, password)) {
@@ -200,13 +228,12 @@ void LoginWindow::onLoginClicked() {
             qDebug() << "Manager found:" << manager.id << manager.email;
             if (manager.id > 0) {
                 userId = manager.id;
-                userType = 2; // Manager
+                userType = 2;
                 authenticated = true;
             }
         }
     }
 
-    // Попытка входа для администратора
     if (!authenticated) {
         qDebug() << "Checking admin...";
         if (dm.adminLoginByEmail(email, password)) {
@@ -214,7 +241,7 @@ void LoginWindow::onLoginClicked() {
             qDebug() << "Admin found:" << admin.id << admin.email;
             if (admin.id > 0) {
                 userId = admin.id;
-                userType = 3; // Admin
+                userType = 3;
                 authenticated = true;
             }
         }
@@ -244,7 +271,7 @@ void LoginWindow::onPasswordToggle() {
 }
 
 void LoginWindow::showError(const QString& message) {
-    errorLabel->setText(message);
+    errorLabel->setText("⚠️ " + message);
     errorLabel->setProperty("class", "error-label");
     errorLabel->style()->unpolish(errorLabel);
     errorLabel->style()->polish(errorLabel);
@@ -255,4 +282,12 @@ void LoginWindow::showSuccess(const QString& message) {
     errorLabel->setProperty("class", "success-label");
     errorLabel->style()->unpolish(errorLabel);
     errorLabel->style()->polish(errorLabel);
+}
+
+void LoginWindow::copyTestUsersToClipboard() {
+    if (!testUsersText) return;
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    if (!clipboard) return;
+    clipboard->setText(testUsersText->toPlainText());
+    showSuccess("Данные тестовых пользователей скопированы в буфер обмена");
 }

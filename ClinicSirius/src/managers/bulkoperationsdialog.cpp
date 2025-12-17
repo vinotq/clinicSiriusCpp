@@ -72,8 +72,8 @@ void BulkOperationsDialog::buildUI() {
 
     QHBoxLayout* footer = new QHBoxLayout();
     footer->setSpacing(8);
-    m_applyBtn = new QPushButton("Создать слоты");
-    m_cancelBtn = new QPushButton("Отмена");
+    m_applyBtn = new QPushButton("➕ Создать слоты");
+    m_cancelBtn = new QPushButton("❌ Отмена");
     footer->addStretch();
     footer->addWidget(m_applyBtn);
     footer->addWidget(m_cancelBtn);

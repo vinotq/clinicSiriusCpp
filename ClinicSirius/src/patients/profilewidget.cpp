@@ -220,7 +220,7 @@ void ProfileWidget::buildProfileTab() {
     QHBoxLayout *familyActions = new QHBoxLayout();
     familyActions->setSpacing(8);
     
-    removeFamilyButton = new QPushButton("Удалить из семьи");
+    removeFamilyButton = new QPushButton("❌ Удалить из семьи");
     removeFamilyButton->setMinimumHeight(36);
     removeFamilyButton->setProperty("class", "danger-button");
 
@@ -247,7 +247,7 @@ void ProfileWidget::buildProfileTab() {
     codesLayout->addWidget(codesTitle);
 
     // Генерация кода
-    generateCodeButton = new QPushButton("Сгенерировать код");
+    generateCodeButton = new QPushButton("🔐 Сгенерировать код");
     generateCodeButton->setMinimumHeight(36);
     invitationCodeDisplay = new QLineEdit();
     invitationCodeDisplay->setText("Нет активного кода");
@@ -266,7 +266,7 @@ void ProfileWidget::buildProfileTab() {
     useCodeLabel->setProperty("class", "use-code-label");
     codesLayout->addWidget(useCodeLabel);
 
-    useCodeButton = new QPushButton("Открыть диалог");
+    useCodeButton = new QPushButton("🔓 Открыть диалог");
     useCodeButton->setMinimumHeight(36);
 
     codesLayout->addWidget(useCodeButton);
@@ -334,13 +334,13 @@ void ProfileWidget::buildSettingsTab() {
 
     cardLayout->addLayout(form);
 
-    saveButton = new QPushButton("Сохранить");
+    saveButton = new QPushButton("💾 Сохранить");
     saveButton->setMinimumHeight(40);
-    deleteButton = new QPushButton("Удалить аккаунт");
+    deleteButton = new QPushButton("🗑 Удалить аккаунт");
     deleteButton->setMinimumHeight(40);
     deleteButton->setProperty("class", "danger-button");
     
-    refreshDataButton = new QPushButton("Обновить данные");
+    refreshDataButton = new QPushButton("🔄 Обновить данные");
     refreshDataButton->setMinimumHeight(40);
 
     saveStatusLabel = new QLabel();

@@ -79,13 +79,6 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     padding: 10px 12px;
 }
 
-QPushButton {
-    background-color: #3b82f6 !important;
-    color: #ffffff !important;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 24px;
-}
 
 QComboBox, QSpinBox, QDoubleSpinBox {
     background-color: #ffffff !important;
@@ -106,6 +99,9 @@ QLabel[class="info-icon"] {
     font-size: 24pt;
     background-color: transparent;
 }
+
+/* Emoji infographic widget used across screens */
+
 
 QPushButton[class="emoji-button"], QPushButton[class="icon-button"] {
     font-size: 12pt;
@@ -191,7 +187,7 @@ QLabel[class="page-subtitle"] {
 QPushButton {
     background-color: #3b82f6;
     color: #ffffff;
-    border: none;
+    border: 1px solid #2563eb; /* базовая обводка для всех кнопок */
     border-radius: 6px;
     padding: 10px 24px;
     font-size: 11pt;
@@ -219,7 +215,7 @@ QPushButton[class="primary"] {
     font-weight: 700;
     min-height: 44px;
     font-size: 12pt;
-    border: none;
+    border: 2px solid #1d4ed8; /* более выразительная обводка для primary */
     border-radius: 6px;
 }
 
@@ -256,7 +252,12 @@ QPushButton[class="danger"]:hover {
 QPushButton[class="ghost"] {
     background-color: transparent;
     color: #666666;
-    border: none;
+    border: 1px solid #d1d5db;
+}
+
+QPushButton:focus {
+    border: 2px solid rgba(59,130,246,0.6);
+    outline: none;
 }
 
 QPushButton[class="ghost"]:hover {
@@ -447,6 +448,78 @@ QLineEdit:read-only {
 QTextEdit {
     background-color: #ffffff;
     color: #333333;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+QPlainTextEdit {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 10pt;
+}
+
+QPlainTextEdit[class="test-users-text"] {
+    background-color: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+QWidget[class="test-users-panel"] {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 16px;
+}
+
+QLabel[class="patient-info-hint"] {
+    color: #666666;
+    font-style: italic;
+}
+
+QLabel[class="family-head-label"] {
+    font-weight: bold;
+    font-size: 12pt;
+}
+
+QLabel[class="family-status-label"] {
+    color: #2d7f2d;
+}
+
+QLabel[class="manager-email-label"] {
+    color: #666666;
+}
+
+QLabel[class="manager-welcome-label"] {
+    color: #666666;
+    font-size: 11pt;
+}
+
+QWidget[class="manager-quick-card"] {
+    background-color: #f0f4f8;
+    border-radius: 8px;
+}
+
+QLabel[class="manager-quick-desc"] {
+    color: #666666;
+    padding-top: 8px;
+}
+
+QLabel[class="slot-info-label"] {
+    color: #666666;
+    font-size: 10pt;
+    padding: 8px;
+}
+
+QLabel[class="patient-status-label"] {
+    color: #666666;
+}
 
 /* Icon label outlines to improve contrast */
 QLabel[class="info-icon"], QLabel[class="service-icon"], QLabel[class="header-logo-icon"], QLabel[class="doctor-card-icon"], QLabel[class="stats-icon"], QLabel[class="contact-icon"] {

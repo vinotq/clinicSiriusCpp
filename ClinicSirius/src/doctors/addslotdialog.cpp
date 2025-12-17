@@ -61,11 +61,11 @@ void AddSlotDialog::buildUI() {
     QHBoxLayout *durationLayout = new QHBoxLayout();
     durationLayout->addWidget(durationSpinBox);
     
-    preset30 = new QPushButton("30 мин");
+    preset30 = new QPushButton("⏱ 30 мин");
     preset30->setMaximumWidth(70);
-    preset45 = new QPushButton("45 мин");
+    preset45 = new QPushButton("⏱ 45 мин");
     preset45->setMaximumWidth(70);
-    preset60 = new QPushButton("60 мин");
+    preset60 = new QPushButton("⏱ 60 мин");
     preset60->setMaximumWidth(70);
     
     durationLayout->addWidget(preset30);
@@ -80,8 +80,8 @@ void AddSlotDialog::buildUI() {
     form->addRow("Длительность:", durationLayout);
     form->addRow("Кабинет:", roomCombo);
 
-    addButton = new QPushButton("Добавить");
-    cancelButton = new QPushButton("Отмена");
+    addButton = new QPushButton("➕ Добавить");
+    cancelButton = new QPushButton("❌ Отмена");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(addButton);

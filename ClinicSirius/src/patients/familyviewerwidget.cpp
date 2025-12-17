@@ -1,5 +1,6 @@
 #include "patients/familyviewerwidget.h"
 #include "patients/createpatientdialog.h"
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
@@ -7,76 +8,82 @@
 #include <QInputDialog>
 #include <QCompleter>
 #include <QDialog>
-#include <QScrollArea>
 #include <QFormLayout>
+#include <QLabel>
 #include <algorithm>
 
 FamilyViewerWidget::FamilyViewerWidget(QWidget *parent)
-    : QWidget(parent), m_dataManager(QString()), m_selectedPatientId(-1) {
+    : QWidget(parent),
+      m_dataManager(QString()),
+      m_selectedPatientId(-1)
+{
     buildUI();
 }
 
-void FamilyViewerWidget::buildUI() {
+void FamilyViewerWidget::buildUI()
+{
     setWindowTitle("Управление семьями пациентов");
     resize(700, 600);
 
     QVBoxLayout *main = new QVBoxLayout(this);
 
-    // ===== Patient Selector Section =====
+    /* ================== ВЫБОР ПАЦИЕНТА ================== */
+
     QGroupBox *patientGroup = new QGroupBox("Выбор пациента для управления семьей");
     QVBoxLayout *patientLayout = new QVBoxLayout(patientGroup);
 
-    // Search field
     QHBoxLayout *searchLayout = new QHBoxLayout();
     QLabel *searchLabel = new QLabel("Поиск пациента:");
     m_patientSearchEdit = new QLineEdit();
     m_patientSearchEdit->setPlaceholderText("Введите имя или фамилию...");
-    m_patientSearchEdit->setMaximumWidth(300);
+    m_patientSearchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
     searchLayout->addWidget(searchLabel);
     searchLayout->addWidget(m_patientSearchEdit);
-    searchLayout->addStretch();
     patientLayout->addLayout(searchLayout);
 
-    // Patient combo box
     QHBoxLayout *comboLayout = new QHBoxLayout();
     QLabel *patientLabel = new QLabel("Выбранный пациент:");
     m_patientComboBox = new QComboBox();
-    m_patientComboBox->setMinimumWidth(300);
+    m_patientComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
     comboLayout->addWidget(patientLabel);
     comboLayout->addWidget(m_patientComboBox);
-    comboLayout->addStretch();
     patientLayout->addLayout(comboLayout);
 
-    // Patient info
     m_patientInfoLabel = new QLabel("Выберите пациента для управления его семьей");
-    m_patientInfoLabel->setStyleSheet("color: #666; font-style: italic;");
-    patientLayout->addWidget(m_patientInfoLabel);
+    m_patientInfoLabel->setWordWrap(true);
+    m_patientInfoLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
+    patientLayout->addWidget(m_patientInfoLabel);
     main->addWidget(patientGroup);
 
-    // ===== Family Info and Control Section =====
+    /* ================== СЕМЬЯ ================== */
+
     QGroupBox *familyGroup = new QGroupBox("Управление семьей пациента");
     QVBoxLayout *familyLayout = new QVBoxLayout(familyGroup);
 
-    // Family head info
     m_familyHeadLabel = new QLabel("Глава семьи: ---");
-    m_familyHeadLabel->setStyleSheet("font-weight: bold; font-size: 12pt;");
+    m_familyHeadLabel->setWordWrap(true);
+    m_familyHeadLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+
     familyLayout->addWidget(m_familyHeadLabel);
 
-    // Family members list
     QLabel *membersLabel = new QLabel("Члены семьи:");
     familyLayout->addWidget(membersLabel);
 
     m_familyList = new QListWidget();
     m_familyList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_familyList->setMinimumHeight(250);
+    m_familyList->setWordWrap(true);
+    m_familyList->setTextElideMode(Qt::ElideRight);
+
     familyLayout->addWidget(m_familyList);
 
-    // Action buttons
     QHBoxLayout *btnLayout = new QHBoxLayout();
-    m_addBtn = new QPushButton("+ Добавить члена");
-    m_editBtn = new QPushButton("✎ Редактировать");
-    m_removeBtn = new QPushButton("✕ Удалить");
+    m_addBtn = new QPushButton("➕ Добавить члена");
+    m_editBtn = new QPushButton("✍️ Редактировать");
+    m_removeBtn = new QPushButton("❌ Удалить");
 
     m_addBtn->setEnabled(false);
     m_editBtn->setEnabled(false);
@@ -89,21 +96,33 @@ void FamilyViewerWidget::buildUI() {
 
     familyLayout->addLayout(btnLayout);
 
-    // Status label
     m_statusLabel = new QLabel();
-    m_statusLabel->setStyleSheet("color: #2d7f2d;");
-    familyLayout->addWidget(m_statusLabel);
+    m_statusLabel->setWordWrap(true);
+    m_statusLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
+    familyLayout->addWidget(m_statusLabel);
     main->addWidget(familyGroup);
 
-    // Connections
-    connect(m_patientSearchEdit, &QLineEdit::textChanged, this, &FamilyViewerWidget::onSearchPatient);
-    connect(m_patientComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), 
+    /* ================== СИГНАЛЫ ================== */
+
+    connect(m_patientSearchEdit, &QLineEdit::textChanged,
+            this, &FamilyViewerWidget::onSearchPatient);
+
+    connect(m_patientComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &FamilyViewerWidget::onPatientSelected);
-    connect(m_addBtn, &QPushButton::clicked, this, &FamilyViewerWidget::onAddMember);
-    connect(m_editBtn, &QPushButton::clicked, this, &FamilyViewerWidget::onEditMember);
-    connect(m_removeBtn, &QPushButton::clicked, this, &FamilyViewerWidget::onRemoveMember);
-    connect(m_familyList, &QListWidget::itemDoubleClicked, this, &FamilyViewerWidget::onMemberDoubleClicked);
+
+    connect(m_addBtn, &QPushButton::clicked,
+            this, &FamilyViewerWidget::onAddMember);
+
+    connect(m_editBtn, &QPushButton::clicked,
+            this, &FamilyViewerWidget::onEditMember);
+
+    connect(m_removeBtn, &QPushButton::clicked,
+            this, &FamilyViewerWidget::onRemoveMember);
+
+    connect(m_familyList, &QListWidget::itemDoubleClicked,
+            this, &FamilyViewerWidget::onMemberDoubleClicked);
+
     connect(m_familyList, &QListWidget::itemSelectionChanged, this, [this]() {
         bool hasSelection = m_familyList->currentItem() != nullptr;
         m_editBtn->setEnabled(hasSelection && m_selectedPatientId > 0);
@@ -113,7 +132,6 @@ void FamilyViewerWidget::buildUI() {
 
 void FamilyViewerWidget::setUser(const LoginUser &user) {
     m_currentUser = user;
-    // Remove patient-only restriction - now works for both managers and patients
     populatePatientSelector();
 }
 
@@ -128,7 +146,6 @@ void FamilyViewerWidget::setSelectedPatient(int patientId) {
 void FamilyViewerWidget::populatePatientSelector() {
     m_patientComboBox->clear();
     
-    // Load all patients
     QList<Patient> allPatients = m_dataManager.getAllPatients();
     std::sort(allPatients.begin(), allPatients.end(), 
               [](const Patient &a, const Patient &b) { return a.fullName().toLower() < b.fullName().toLower(); });
@@ -140,7 +157,6 @@ void FamilyViewerWidget::populatePatientSelector() {
 }
 
 void FamilyViewerWidget::updatePatientSelector(int selectedPatientId) {
-    // Find and select patient in combo box
     for (int i = 0; i < m_patientComboBox->count(); ++i) {
         if (m_patientComboBox->itemData(i).toInt() == selectedPatientId) {
             m_patientComboBox->setCurrentIndex(i);
@@ -150,7 +166,6 @@ void FamilyViewerWidget::updatePatientSelector(int selectedPatientId) {
 }
 
 void FamilyViewerWidget::onSearchPatient(const QString &text) {
-    // Filter combo box based on search text
     if (text.isEmpty()) {
         populatePatientSelector();
         return;
@@ -186,7 +201,6 @@ void FamilyViewerWidget::loadFamilyMembers() {
         return;
     }
 
-    // REQ-006: Display family headed by selected patient
     Patient headPatient = m_dataManager.getPatientById(m_selectedPatientId);
     if (headPatient.id_patient <= 0) {
         m_familyHeadLabel->setText("Глава семьи: Пациент не найден");
@@ -213,7 +227,6 @@ void FamilyViewerWidget::refreshFamilyList() {
         return;
     }
 
-    // Get all family members where selected patient is the head
     QList<PatientGroup> familyMembers = m_dataManager.getPatientFamilyMembers(m_selectedPatientId);
 
     if (familyMembers.isEmpty()) {
@@ -238,7 +251,6 @@ void FamilyViewerWidget::onAddMember() {
         return;
     }
 
-    // Добавление только по поиску (без кода) с подсказками по ФИО
     QDialog dlg(this);
     dlg.setWindowTitle("Добавить члена семьи");
     dlg.resize(420, 150);
@@ -250,7 +262,6 @@ void FamilyViewerWidget::onAddMember() {
     QLineEdit *searchEdit = new QLineEdit();
     searchEdit->setPlaceholderText("Начните вводить ФИО пациента...");
 
-    // Собираем список всех пациентов для подсказок, кроме головы семьи
     QStringList patientNames;
     QList<Patient> allPatients = m_dataManager.getAllPatients();
     for (const Patient &p : allPatients) {
@@ -268,8 +279,8 @@ void FamilyViewerWidget::onAddMember() {
     main->addWidget(searchEdit);
 
     QHBoxLayout *btns = new QHBoxLayout();
-    QPushButton *okBtn = new QPushButton("ОК");
-    QPushButton *cancelBtn = new QPushButton("Отмена");
+    QPushButton *okBtn = new QPushButton("✅ ОК");
+    QPushButton *cancelBtn = new QPushButton("❌ Отмена");
     btns->addStretch();
     btns->addWidget(okBtn);
     btns->addWidget(cancelBtn);
@@ -288,7 +299,6 @@ void FamilyViewerWidget::onAddMember() {
         return;
     }
 
-    // Ищем пациента по полному совпадению ФИО (без учёта регистра)
     int selectedId = -1;
     for (const Patient &p : allPatients) {
         if (p.fullName().toLower() == patientName.toLower() &&
@@ -320,7 +330,6 @@ void FamilyViewerWidget::onAddMember() {
 }
 
 void FamilyViewerWidget::onEditMember() {
-    // REQ-006: Edit family member
     QListWidgetItem *item = m_familyList->currentItem();
     if (!item) {
         QMessageBox::warning(this, "Ошибка", "Выберите члена семьи");
@@ -338,7 +347,6 @@ void FamilyViewerWidget::onEditMember() {
 }
 
 void FamilyViewerWidget::onRemoveMember() {
-    // REQ-006: Remove family member with confirmation
     QListWidgetItem *item = m_familyList->currentItem();
     if (!item) {
         QMessageBox::warning(this, "Ошибка", "Выберите члена семьи для удаления");
@@ -358,7 +366,6 @@ void FamilyViewerWidget::onRemoveMember() {
 }
 
 void FamilyViewerWidget::onMemberDoubleClicked(QListWidgetItem *item) {
-    // REQ-006: Double-click to edit
     Q_UNUSED(item);
     onEditMember();
 }

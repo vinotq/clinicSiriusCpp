@@ -120,7 +120,7 @@ void RoomScheduleViewer::buildUI() {
             msgBox.setIcon(QMessageBox::Information);
             
             QPushButton *rescheduleBtn = msgBox.addButton("⏩ Перенести", QMessageBox::ActionRole);
-            QPushButton *cancelBtn = msgBox.addButton("❌ Отменить", QMessageBox::DestructiveRole);
+            QPushButton *cancelBtn = msgBox.addButton("Отменить", QMessageBox::DestructiveRole);
             QPushButton *closeBtn = msgBox.addButton("Закрыть", QMessageBox::RejectRole);
             
             msgBox.setDefaultButton(closeBtn);

@@ -146,7 +146,7 @@ void RegistrationWindow::setupUI() {
     mainLayout->addSpacing(10);
 
     // Кнопка регистрации
-    registerButton = new QPushButton("Зарегистрироваться");
+    registerButton = new QPushButton("📝 Зарегистрироваться");
     registerButton->setMinimumHeight(45);
     registerButton->setFont(QFont("Arial", 12, QFont::Bold));
     connect(registerButton, &QPushButton::clicked, this, &RegistrationWindow::onRegisterClicked);
@@ -160,7 +160,7 @@ void RegistrationWindow::setupUI() {
     // Ссылка на вход
     QHBoxLayout *loginLayout = new QHBoxLayout();
     QLabel *hasAccountLabel = new QLabel("Уже есть аккаунт?");
-    loginButton = new QPushButton("Войдите");
+    loginButton = new QPushButton("🔐 Войдите");
     loginButton->setFlat(true);
     loginButton->setProperty("class", "login-link");
     connect(loginButton, &QPushButton::clicked, this, &RegistrationWindow::onLoginClicked);

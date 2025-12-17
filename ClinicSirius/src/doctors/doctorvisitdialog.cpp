@@ -67,8 +67,8 @@ void DoctorVisitDialog::buildVisitUI() {
         }
     }
 
-    saveButton = new QPushButton("Записать на прием");
-    finishButton = new QPushButton("Завершить прием");
+    saveButton = new QPushButton("📅 Записать на прием");
+    finishButton = new QPushButton("✅ Завершить прием");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(saveButton);
@@ -136,8 +136,8 @@ void DoctorVisitDialog::buildBookingUI() {
                 this, &DoctorVisitDialog::loadSchedulesForSelectedDoctor);
     }
     
-    bookButton = new QPushButton("Записать");
-    cancelBookingButton = new QPushButton("Отменить запись");
+    bookButton = new QPushButton("✅ Записать");
+    cancelBookingButton = new QPushButton("❌ Отменить запись");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(bookButton);
