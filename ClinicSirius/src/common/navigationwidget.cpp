@@ -15,7 +15,7 @@ void NavigationWidget::setupUI() {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(10);
 
-    QLabel *logoLabel = new QLabel("Clinic Sirius");
+    QLabel *logoLabel = new QLabel("Клиника «Сириус»");
     QFont logoFont = logoLabel->font();
     logoFont.setPointSize(14);
     logoFont.setBold(true);
@@ -24,9 +24,9 @@ void NavigationWidget::setupUI() {
 
     layout->addSpacing(20);
 
-    homeButton = new QPushButton("Home");
-    profileButton = new QPushButton("Profile");
-    appointmentsButton = new QPushButton("Appointments");
+    homeButton = new QPushButton("Главная");
+    profileButton = new QPushButton("Профиль");
+    appointmentsButton = new QPushButton("Приёмы");
 
     layout->addWidget(homeButton);
     layout->addWidget(profileButton);
@@ -34,7 +34,7 @@ void NavigationWidget::setupUI() {
 
     layout->addStretch();
 
-    logoutButton = new QPushButton("Logout");
+    logoutButton = new QPushButton("Выход");
     layout->addWidget(logoutButton);
 
     connect(homeButton, &QPushButton::clicked, this, &NavigationWidget::homeClicked);

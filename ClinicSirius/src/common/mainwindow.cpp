@@ -7,8 +7,9 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), stackedWidget(nullptr), authWindow(nullptr), mainPage(nullptr) {
-    setWindowTitle("Clinic Sirius");
-    setWindowIcon(QIcon(":/images/clinic_icon.png"));
+    setWindowTitle("Клиника «Сириус»");
+    // Use vector SVG icon for crisp scaling
+    // app icon removed; use emoji in UI where needed
     setGeometry(100, 100, 1280, 800);
 
     setupUI();

@@ -6,6 +6,9 @@
 #include "patienthistorywidget.h"
 #include "managers/managerwidget.h"
 #include "managers/managerprofilewidget.h"
+#include "admins/adminwidget.h"
+#include "admins/adminprofilewidget.h" // CHANGED: Include admin profile widget
+
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -15,7 +18,11 @@
 #include <QPushButton>
 #include <QToolButton>
 #include <QMenu>
+#include <QIcon>
+#include <QPixmap>
+#include <QSize>
 
+// ServiceCard implementation
 ServiceCard::ServiceCard(const QString& title, const QString& description,
                          const QString& iconPath, QWidget *parent)
     : QWidget(parent) {
@@ -28,17 +35,25 @@ void ServiceCard::setupUI(const QString& title, const QString& description, cons
     layout->setContentsMargins(20, 20, 20, 20);
     layout->setSpacing(15);
 
-    QLabel *iconLabel = new QLabel(iconPath);
-    QFont iconFont;
-    iconFont.setPointSize(36);
-    iconLabel->setFont(iconFont);
+    QLabel *iconLabel = new QLabel();
+    iconLabel->setProperty("class", "service-icon");
+    if (iconPath.startsWith(":/")) {
+        if (iconPath.endsWith(".svg", Qt::CaseInsensitive)) {
+            QPixmap pm = QIcon(iconPath).pixmap(QSize(36,36));
+            if (!pm.isNull()) iconLabel->setPixmap(pm);
+        } else {
+            QPixmap pix(iconPath);
+            if (!pix.isNull()) iconLabel->setPixmap(pix.scaledToHeight(36, Qt::SmoothTransformation));
+        }
+    } else if (!iconPath.isEmpty()) {
+        iconLabel->setText(iconPath);
+        QFont iconFont; iconFont.setPointSize(36); iconLabel->setFont(iconFont);
+    }
     iconLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(iconLabel);
 
     QLabel *titleLabel = new QLabel(title);
-    QFont titleFont;
-    titleFont.setPointSize(13);
-    titleFont.setBold(true);
+    QFont titleFont; titleFont.setPointSize(13); titleFont.setBold(true);
     titleLabel->setFont(titleFont);
     titleLabel->setAlignment(Qt::AlignCenter);
     layout->addWidget(titleLabel);
@@ -53,11 +68,9 @@ void ServiceCard::setupUI(const QString& title, const QString& description, cons
     setMinimumHeight(180);
 }
 
-void ServiceCard::applyStyles() {
-    setProperty("class", "service-card");
-}
+void ServiceCard::applyStyles() { setProperty("class", "service-card"); }
 
-// ========== MainPage ==========
+// ========== MainPage ===========
 
 MainPage::MainPage(QWidget *parent)
     : QWidget(parent) {
@@ -65,8 +78,7 @@ MainPage::MainPage(QWidget *parent)
     applyStyles();
 }
 
-MainPage::~MainPage() {
-}
+MainPage::~MainPage() {}
 
 void MainPage::setupUI() {
     mainLayout = new QVBoxLayout(this);
@@ -77,26 +89,18 @@ void MainPage::setupUI() {
     headerLayout->setContentsMargins(40, 20, 40, 20);
     headerLayout->setSpacing(20);
 
-    logoButton = new QPushButton("🏥 Clinic Sirius");
+    logoButton = new QPushButton();
     logoButton->setFlat(true);
-    QFont logoFont;
-    logoFont.setPointSize(16);
-    logoFont.setBold(true);
-    logoButton->setFont(logoFont);
+    QIcon clinicIcon(":/images/clinic.svg");
+    logoButton->setIcon(clinicIcon);
+    logoButton->setIconSize(QSize(48,48));
+    logoButton->setText("Клиника «Сириус»");
+    QFont logoFont; logoFont.setPointSize(16); logoButton->setFont(logoFont);
     logoButton->setProperty("class", "header-logo-btn");
-    
-    // Connect logo button click to show appropriate home page
-    connect(logoButton, &QPushButton::clicked, this, [this]() {
-        // Use currentUser which gets updated in setCurrentUser()
-        if (currentUser.type == LoginUser::DOCTOR) {
-            contentStack->setCurrentWidget(doctorLandingPage);
-        } else {
-            contentStack->setCurrentWidget(landingPage);
-        }
-    });
-    headerLayout->addWidget(logoButton);
 
+    headerLayout->addWidget(logoButton);
     headerLayout->addStretch();
+
     buildHeader(headerLayout);
 
     QWidget *headerWidget = new QWidget();
@@ -104,10 +108,14 @@ void MainPage::setupUI() {
     headerWidget->setProperty("class", "header-widget");
     mainLayout->addWidget(headerWidget);
 
+    // Build landing page content first
+    buildLanding();
+
+    // Content stack
     contentStack = new QStackedWidget(this);
     mainLayout->addWidget(contentStack);
 
-    buildLanding();
+    // Instantiate widgets
     profileWidget = new ProfileWidget(this);
     connect(profileWidget, &ProfileWidget::requestLogout, this, &MainPage::logoutRequested);
     connect(profileWidget, &ProfileWidget::requestAccountDeletion, this, &MainPage::logoutRequested);
@@ -116,31 +124,72 @@ void MainPage::setupUI() {
     patientHistoryWidget = new PatientHistoryWidget(this);
     managerWidget = new ManagerWidget(this);
     managerProfileWidget = new ManagerProfileWidget(this);
+    adminWidget = new AdminWidget(this);
+    adminProfileWidget = new AdminProfileWidget(this); // CHANGED: Create admin profile widget
+    connect(adminProfileWidget, &AdminProfileWidget::requestLogout, this, &MainPage::logoutRequested); // CHANGED: Connect admin profile logout signal
+    doctorProfileWidget = new DoctorProfileWidget(this);
+    doctorWidget = new DoctorWidget(this);
 
+    // Add widgets to stack
     contentStack->addWidget(landingPage);
     contentStack->addWidget(profileWidget);
     contentStack->addWidget(appointmentBookingWidget);
     contentStack->addWidget(patientHistoryWidget);
     contentStack->addWidget(managerWidget);
     contentStack->addWidget(managerProfileWidget);
-    
-    connect(this, &MainPage::navigateToBooking, this, &MainPage::showBooking);
-    
-    doctorProfileWidget = new DoctorProfileWidget(this);
-    connect(doctorProfileWidget, &DoctorProfileWidget::requestLogout, this, &MainPage::logoutRequested);
-    connect(doctorProfileWidget, &DoctorProfileWidget::requestAccountDeletion, this, &MainPage::logoutRequested);
+    contentStack->addWidget(adminWidget);
+    contentStack->addWidget(adminProfileWidget); // CHANGED: Add admin profile widget to stack
     contentStack->addWidget(doctorProfileWidget);
-    
+
     buildDoctorLanding();
     contentStack->addWidget(doctorLandingPage);
-    
-    doctorWidget = new DoctorWidget(this);
-    connect(doctorWidget, &DoctorWidget::requestLogout, this, &MainPage::logoutRequested);
     contentStack->addWidget(doctorWidget);
+
+    connect(this, &MainPage::navigateToBooking, this, &MainPage::showBooking);
+
+    // Logo navigation
+    connect(logoButton, &QPushButton::clicked, this, [this]() {
+        switch (currentUser.type) {
+            case LoginUser::PATIENT:
+                if (landingPage) contentStack->setCurrentWidget(landingPage);
+                break;
+            case LoginUser::DOCTOR:
+                if (doctorLandingPage) contentStack->setCurrentWidget(doctorLandingPage);
+                break;
+            case LoginUser::MANAGER:
+                if (managerWidget) contentStack->setCurrentWidget(managerWidget);
+                break;
+            case LoginUser::ADMIN:
+                if (adminWidget) contentStack->setCurrentWidget(adminWidget);
+                break;
+            default:
+                if (landingPage) contentStack->setCurrentWidget(landingPage);
+                break;
+        }
+    });
 }
 
 void MainPage::applyStyles() {
     setProperty("class", "main-page");
+}
+
+void MainPage::adjustHeaderForRole() {
+    // Ensure menu actions exist
+    if (!userMenu) return;
+
+    // Default: enable profile/settings
+    profileAction->setVisible(true);
+    settingsAction->setVisible(true);
+
+    // Staff members (Admin, Manager, Doctor) do not need a separate profile entry
+    // They access their info via settings instead
+    if (currentUser.type == LoginUser::ADMIN || currentUser.type == LoginUser::MANAGER || currentUser.type == LoginUser::DOCTOR) {
+        profileAction->setVisible(false);
+    }
+
+    // Update the displayed name on the menu button
+    QString nameText = currentUser.name.isEmpty() ? (currentUser.type == LoginUser::ADMIN ? "Администратор" : "Профиль") : currentUser.name;
+    userMenuButton->setText(nameText);
 }
 
 void MainPage::buildHeader(QHBoxLayout *headerLayout) {
@@ -154,25 +203,43 @@ void MainPage::buildHeader(QHBoxLayout *headerLayout) {
     userMenuButton->setProperty("class", "header-profile-btn");
 
     userMenu = new QMenu(userMenuButton);
-    profileAction = userMenu->addAction("👤 Профиль");
-    settingsAction = userMenu->addAction("⚙️ Настройки");
+    profileAction = userMenu->addAction("Профиль");
+    profileAction->setText(QString::fromUtf8("👤 ") + profileAction->text());
+    settingsAction = userMenu->addAction("Настройки");
+    settingsAction->setText(QString::fromUtf8("⚙️ ") + settingsAction->text());
     userMenu->addSeparator();
-    logoutAction = userMenu->addAction("🚪 Выход");
+    logoutAction = userMenu->addAction("Выход");
+    logoutAction->setText(QString::fromUtf8("🚪 ") + logoutAction->text());
 
     connect(profileAction, &QAction::triggered, this, [this]() { 
         if (currentUser.type == LoginUser::DOCTOR) {
             showDoctorProfile(false);
-        } else if (currentUser.type == LoginUser::MANAGER) {
-            // show manager-specific profile
-            managerProfileWidget->setUser(currentUser);
-            contentStack->setCurrentWidget(managerProfileWidget);
         } else {
-            showProfile(false);
+            // Managers don't have a separate profile widget in the header;
+            // route managers to the manager dashboard instead
+            if (currentUser.type == LoginUser::MANAGER && managerWidget) {
+                managerWidget->setUser(currentUser);
+                contentStack->setCurrentWidget(managerWidget);
+            } else {
+                showProfile(false);
+            }
         }
     });
     connect(settingsAction, &QAction::triggered, this, [this]() { 
         if (currentUser.type == LoginUser::DOCTOR) {
             showDoctorProfile(true);
+        } else if (currentUser.type == LoginUser::MANAGER) {
+            // Managers: show manager profile widget as settings (no separate profile)
+            if (managerProfileWidget) {
+                managerProfileWidget->setUser(currentUser);
+                contentStack->setCurrentWidget(managerProfileWidget);
+            }
+        } else if (currentUser.type == LoginUser::ADMIN) {
+            // CHANGED: Admins: show admin profile widget as settings (similar to manager)
+            if (adminProfileWidget) {
+                adminProfileWidget->setUser(currentUser);
+                contentStack->setCurrentWidget(adminProfileWidget);
+            }
         } else {
             showProfile(true);
         }
@@ -196,7 +263,7 @@ void MainPage::buildLanding() {
     heroLayout->setContentsMargins(30, 25, 30, 25);
     heroLayout->setSpacing(12);
 
-    welcomeLabel = new QLabel("Добро пожаловать в Clinic Sirius");
+    welcomeLabel = new QLabel("Добро пожаловать в клинику «Сириус»");
     QFont welcomeFont;
     welcomeFont.setPointSize(24);
     welcomeFont.setBold(true);
@@ -222,7 +289,7 @@ void MainPage::buildLanding() {
     connect(profileActionButton, &QPushButton::clicked, this, [this]() { showProfile(false); });
     actionsLayout->addWidget(profileActionButton);
 
-    QPushButton *bookingActionButton = new QPushButton("📅 Записать прием");
+    QPushButton *bookingActionButton = new QPushButton("✅ Записать прием");
     bookingActionButton->setMinimumHeight(45);
     bookingActionButton->setMinimumWidth(220);
     bookingActionButton->setProperty("class", "hero-booking-btn");
@@ -249,21 +316,21 @@ void MainPage::buildLanding() {
     ServiceCard *onlineBookingCard = new ServiceCard(
         "Онлайн запись",
         "Запишитесь на прием в врачу в удобное время прямо из личного кабинета",
-        "📅"
+        ":/images/clinic.svg"
     );
     servicesLayout->addWidget(onlineBookingCard, 0, 0);
 
     ServiceCard *doctorsCard = new ServiceCard(
         "Квалифицированные врачи",
         "Лучше специалисты различных направлений готовы помочь вам",
-        "👨‍⚕️"
+        ":/images/doctor.svg"
     );
     servicesLayout->addWidget(doctorsCard, 0, 1);
 
     ServiceCard *confidentialityCard = new ServiceCard(
         "Конфиденциальность",
         "Все данные пациентов защищены и хранятся в безопасности",
-        "🛡️"
+        ":/images/clinic.svg"
     );
     servicesLayout->addWidget(confidentialityCard, 0, 2);
 
@@ -283,10 +350,10 @@ void MainPage::buildLanding() {
     featuresLayout->setContentsMargins(0, 0, 0, 0);
 
     QStringList features = {
-        "✓ Удобное расписание — возможность выбрать удобное время приема",
-        "✓ Быстрое обслуживание — современное оборудование и опытный персонал",
-        "✓ Семейные услуги — прием для всех членов семьи",
-        "✓ Справки и документы — оформление необходимых документов"
+        "Удобное расписание — возможность выбрать удобное время приема",
+        "Быстрое обслуживание — современное оборудование и опытный персонал",
+        "Семейные услуги — прием для всех членов семьи",
+        "Справки и документы — оформление необходимых документов"
     };
 
     int row = 0, col = 0;
@@ -361,9 +428,7 @@ void MainPage::buildLanding() {
 
     QVBoxLayout *phoneLayout = new QVBoxLayout();
     QLabel *phoneIconLabel = new QLabel("📞");
-    QFont phoneIconFont;
-    phoneIconFont.setPointSize(32);
-    phoneIconLabel->setFont(phoneIconFont);
+    QFont pi; pi.setPointSize(20); phoneIconLabel->setFont(pi);
     phoneIconLabel->setAlignment(Qt::AlignCenter);
     phoneLayout->addWidget(phoneIconLabel);
 
@@ -376,7 +441,7 @@ void MainPage::buildLanding() {
     phoneLabel->setProperty("class", "contact-label");
     phoneLayout->addWidget(phoneLabel);
 
-    QLabel *phoneNumberLabel = new QLabel("+7 (999) 123-45-67");
+    QLabel *phoneNumberLabel = new QLabel("8 (862) 444-01-03");
     QFont phoneNumberFont;
     phoneNumberFont.setPointSize(12);
     phoneNumberLabel->setFont(phoneNumberFont);
@@ -386,9 +451,7 @@ void MainPage::buildLanding() {
 
     QVBoxLayout *addressLayout = new QVBoxLayout();
     QLabel *addressIconLabel = new QLabel("📍");
-    QFont addressIconFont;
-    addressIconFont.setPointSize(32);
-    addressIconLabel->setFont(addressIconFont);
+    QFont ai; ai.setPointSize(20); addressIconLabel->setFont(ai);
     addressIconLabel->setAlignment(Qt::AlignCenter);
     addressLayout->addWidget(addressIconLabel);
 
@@ -401,7 +464,7 @@ void MainPage::buildLanding() {
     addressLabel->setProperty("class", "contact-label");
     addressLayout->addWidget(addressLabel);
 
-    QLabel *addressValueLabel = new QLabel("ул. Медицинская, д. 15, Москва");
+    QLabel *addressValueLabel = new QLabel("пгт. Сириус, ул. Старообрядческая, д. 64");
     QFont addressValueFont;
     addressValueFont.setPointSize(12);
     addressValueLabel->setFont(addressValueFont);
@@ -410,10 +473,8 @@ void MainPage::buildLanding() {
     addressLayout->addWidget(addressValueLabel);
 
     QVBoxLayout *hoursLayout = new QVBoxLayout();
-    QLabel *hoursIconLabel = new QLabel("🕐");
-    QFont hoursIconFont;
-    hoursIconFont.setPointSize(32);
-    hoursIconLabel->setFont(hoursIconFont);
+    QLabel *hoursIconLabel = new QLabel("⏰");
+    QFont hi; hi.setPointSize(20); hoursIconLabel->setFont(hi);
     hoursIconLabel->setAlignment(Qt::AlignCenter);
     hoursLayout->addWidget(hoursIconLabel);
 
@@ -426,7 +487,7 @@ void MainPage::buildLanding() {
     hoursLabel->setProperty("class", "contact-label");
     hoursLayout->addWidget(hoursLabel);
 
-    QLabel *hoursValueLabel = new QLabel("Пн-Пт: 09:00 - 18:00\nСб-Вс: 10:00 - 16:00");
+    QLabel *hoursValueLabel = new QLabel("Пн-Пт: 08:00 - 20:00\nСб-Вс: 08:00 - 15:00");
     QFont hoursValueFont;
     hoursValueFont.setPointSize(12);
     hoursValueLabel->setFont(hoursValueFont);
@@ -492,7 +553,7 @@ void MainPage::buildDoctorLanding() {
     QHBoxLayout *actionsLayout = new QHBoxLayout();
     actionsLayout->setSpacing(15);
 
-    QPushButton *scheduleButton = new QPushButton("📅 Расписание");
+        QPushButton *scheduleButton = new QPushButton(QString::fromUtf8("👩\u200D⚕️ ") + "Расписание");
     scheduleButton->setMinimumHeight(45);
     scheduleButton->setMinimumWidth(220);
     scheduleButton->setProperty("class", "hero-booking-btn");
@@ -501,7 +562,7 @@ void MainPage::buildDoctorLanding() {
     });
     actionsLayout->addWidget(scheduleButton);
 
-    QPushButton *historyButton = new QPushButton("📜 История приёмов пациента");
+    QPushButton *historyButton = new QPushButton(QString::fromUtf8("🕘 ") + "История приёмов пациента");
     historyButton->setMinimumHeight(45);
     historyButton->setMinimumWidth(220);
     historyButton->setProperty("class", "hero-history-btn");
@@ -518,7 +579,7 @@ void MainPage::buildDoctorLanding() {
     QScrollArea *scrollArea = new QScrollArea();
     scrollArea->setWidget(contentWidget);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setStyleSheet("QScrollArea { border: none; }");
+    scrollArea->setProperty("class", "no-border-scrollarea");
 
     mainLayout->addWidget(scrollArea);
 }
@@ -530,6 +591,9 @@ void MainPage::setCurrentUser(const LoginUser &user) {
     doctorWidget->setUser(user);
     appointmentBookingWidget->setUser(user);
     
+    // adjust header/menu according to role
+    adjustHeaderForRole();
+
     // For doctors and managers show role-specific landing
     if (user.type == LoginUser::DOCTOR) {
         contentStack->setCurrentWidget(doctorLandingPage);
@@ -537,6 +601,9 @@ void MainPage::setCurrentUser(const LoginUser &user) {
         managerWidget->setUser(user);
         managerProfileWidget->setUser(user);
         contentStack->setCurrentWidget(managerWidget);
+    } else if (user.type == LoginUser::ADMIN) {
+        adminWidget->setUser(user);
+        contentStack->setCurrentWidget(adminWidget);
     } else {
         showHome();
     }

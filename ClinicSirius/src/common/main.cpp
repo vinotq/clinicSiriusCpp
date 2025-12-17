@@ -30,9 +30,14 @@ int main(int argc, char *argv[])
     darkPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255));
     app.setPalette(darkPalette);
     
-    // Загрузка стилей из QSS файла
-    QFile styleFile(":/resources/styles.qss");
-    if (styleFile.open(QFile::ReadOnly)) {
+    // Загрузка стилей из ресурсов или локального файла
+    QFile styleFile(":/styles.qss");
+    if (!styleFile.open(QFile::ReadOnly)) {
+        // fallback to workspace resources path (when running from source tree)
+        styleFile.setFileName("resources/styles.qss");
+        styleFile.open(QFile::ReadOnly);
+    }
+    if (styleFile.isOpen()) {
         QString style = QLatin1String(styleFile.readAll());
         app.setStyleSheet(style);
         styleFile.close();

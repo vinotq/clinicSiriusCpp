@@ -652,6 +652,19 @@ QList<Appointment> DataManager::getAppointmentsByDoctor(int doctorId) const {
     return appointments;
 }
 
+QList<AppointmentSchedule> DataManager::getSchedulesByRoom(int roomId) const {
+    QList<AppointmentSchedule> schedules;
+    QJsonArray array = loadJson("appointment_schedule.json");
+
+    for (const QJsonValue& value : array) {
+        AppointmentSchedule s = AppointmentSchedule::fromJson(value.toObject());
+        if (s.id_room == roomId) {
+            schedules.append(s);
+        }
+    }
+    return schedules;
+}
+
 bool DataManager::doctorExists(int id) const {
     QJsonArray array = loadJson("doctor.json");
 
@@ -955,6 +968,61 @@ bool DataManager::adminLogin(int id, const QString& password) const {
     return false;
 }
 
+// Admin helpers
+QList<Admin> DataManager::getAllAdmins() const {
+    QList<Admin> list;
+    QJsonArray array = loadJson("admin.json");
+    for (const QJsonValue &v : array) {
+        list.append(Admin::fromJson(v.toObject()));
+    }
+    return list;
+}
+
+Admin DataManager::getAdminById(int id) const {
+    QJsonArray array = loadJson("admin.json");
+    for (const QJsonValue &v : array) {
+        Admin a = Admin::fromJson(v.toObject());
+        if (a.id == id) return a;
+    }
+    return Admin();
+}
+
+Admin DataManager::getAdminByEmail(const QString &email) const {
+    QJsonArray array = loadJson("admin.json");
+    for (const QJsonValue &v : array) {
+        Admin a = Admin::fromJson(v.toObject());
+        if (a.email == email) return a;
+    }
+    return Admin();
+}
+
+bool DataManager::adminLoginByEmail(const QString &email, const QString &password) const {
+    Admin a = getAdminByEmail(email);
+    if (a.id <= 0) return false;
+    return verifyPassword(password, a.password);
+}
+
+// CHANGED: Add updateAdmin method
+void DataManager::updateAdmin(const Admin& admin) {
+    QJsonArray array = loadJson("admin.json");
+    QJsonArray newArray;
+    bool found = false;
+    
+    for (const QJsonValue &v : array) {
+        QJsonObject obj = v.toObject();
+        if (obj["id"].toInt() == admin.id) {
+            newArray.append(admin.toJson());
+            found = true;
+        } else {
+            newArray.append(obj);
+        }
+    }
+    
+    if (found) {
+        saveJson("admin.json", newArray);
+    }
+}
+
 // Authentication by email + password
 bool DataManager::patientLoginByEmail(const QString& email, const QString& password) const {
     const QList<Patient>& patients = getAllPatients();
@@ -1024,12 +1092,6 @@ Manager DataManager::getManagerByEmail(const QString& email) const {
 
 QString DataManager::generateInvitationCode(int parentId) {
     // Генерируем уникальный 6-символный код
-    static bool seeded = false;
-    if (!seeded) {
-        srand(time(0));
-        seeded = true;
-    }
-    
     QJsonArray codes = loadJson("invitation_code.json");
     QString code;
     bool codeExists = true;
@@ -1038,8 +1100,9 @@ QString DataManager::generateInvitationCode(int parentId) {
     while (codeExists) {
         code.clear();
         const QString chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        QRandomGenerator gen = QRandomGenerator::securelySeeded();
         for (int i = 0; i < 6; ++i) {
-            int randomIdx = rand() % chars.length();
+            int randomIdx = gen.bounded(0, chars.length());
             code += chars[randomIdx];
         }
         

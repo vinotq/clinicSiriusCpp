@@ -4,6 +4,7 @@
 #include "mainpage.h"
 #include "datamanager.h"
 #include <QStackedWidget>
+#include <QScrollArea>
 #include <QVBoxLayout>
 #include <QIcon>
 #include <QCoreApplication>
@@ -14,8 +15,7 @@ AuthWindow::AuthWindow(QWidget *parent)
     setupUI();
     applyStyles();
     
-    setWindowTitle("Clinic Sirius");
-    setWindowIcon(QIcon(":/images/icon.png"));
+    setWindowTitle("Клиника «Сириус»");
     setMinimumSize(1000, 700);
 }
 
@@ -43,8 +43,15 @@ void AuthWindow::setupUI() {
     connect(mainPage, &MainPage::logoutRequested, this, &AuthWindow::onLogout);
     stackedWidget->addWidget(mainPage);
     
-    // Устанавливаем центральный виджет
-    setCentralWidget(stackedWidget);
+    // Wrap the stacked widget in a scroll area so the whole application can scroll
+    globalScroll = new QScrollArea(this);
+    globalScroll->setWidgetResizable(true);
+    globalScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    globalScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    // Make stackedWidget the child of the scroll area
+    globalScroll->setWidget(stackedWidget);
+    // Set the scroll area as the central widget
+    setCentralWidget(globalScroll);
     
     // По умолчанию показываем окно входа
     stackedWidget->setCurrentWidget(loginWindow);

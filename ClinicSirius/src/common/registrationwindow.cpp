@@ -7,6 +7,9 @@
 #include <QFont>
 #include <QRegularExpression>
 #include <QLabel>
+#include <QIcon>
+#include <QPixmap>
+#include <QSize>
 #include <QTimer>
 #include <QStyle>
 
@@ -26,15 +29,22 @@ void RegistrationWindow::setupUI() {
     mainLayout->setContentsMargins(40, 40, 40, 40);
     mainLayout->setSpacing(20);
 
-    // Лого/Заголовок
-    QLabel *logoLabel = new QLabel();
-    logoLabel->setText("🏥 Clinic Sirius");
+    // Лого/Заголовок (иконка + текст)
+    QHBoxLayout *logoLayout = new QHBoxLayout();
+    logoLayout->setAlignment(Qt::AlignCenter);
+    QLabel *logoIcon = new QLabel();
+    QPixmap clinicPix(":/images/clinic.svg");
+    if (!clinicPix.isNull()) logoIcon->setPixmap(clinicPix.scaledToHeight(32, Qt::SmoothTransformation));
+    logoIcon->setContentsMargins(0,0,8,0);
+    QLabel *logoText = new QLabel("Клиника «Сириус»");
     QFont logoFont;
     logoFont.setPointSize(24);
     logoFont.setBold(true);
-    logoLabel->setFont(logoFont);
-    logoLabel->setAlignment(Qt::AlignCenter);
-    mainLayout->addWidget(logoLabel);
+    logoText->setFont(logoFont);
+    logoText->setAlignment(Qt::AlignCenter);
+    logoLayout->addWidget(logoIcon);
+    logoLayout->addWidget(logoText);
+    mainLayout->addLayout(logoLayout);
 
     // Приветствие
     QLabel *welcomeLabel = new QLabel("Создайте аккаунт");
@@ -92,9 +102,11 @@ void RegistrationWindow::setupUI() {
     passwordInput->setMinimumHeight(40);
     passwordLayout->addWidget(passwordInput);
 
-    passwordToggleButton = new QPushButton("👁");
+    passwordToggleButton = new QPushButton();
     passwordToggleButton->setMaximumWidth(45);
     passwordToggleButton->setMinimumHeight(40);
+        passwordToggleButton->setText("👁️");
+    passwordToggleButton->setIconSize(QSize(20,20));
     connect(passwordToggleButton, &QPushButton::clicked, this, &RegistrationWindow::onPasswordToggle);
     passwordLayout->addWidget(passwordToggleButton);
 
@@ -117,9 +129,11 @@ void RegistrationWindow::setupUI() {
     connect(confirmPasswordInput, &QLineEdit::textChanged, this, &RegistrationWindow::validatePasswords);
     confirmPasswordLayout->addWidget(confirmPasswordInput);
 
-    confirmPasswordToggleButton = new QPushButton("👁");
+    confirmPasswordToggleButton = new QPushButton();
     confirmPasswordToggleButton->setMaximumWidth(45);
     confirmPasswordToggleButton->setMinimumHeight(40);
+        confirmPasswordToggleButton->setText("👁️");
+    confirmPasswordToggleButton->setIconSize(QSize(20,20));
     connect(confirmPasswordToggleButton, &QPushButton::clicked, this, &RegistrationWindow::onConfirmPasswordToggle);
     confirmPasswordLayout->addWidget(confirmPasswordToggleButton);
 
@@ -192,7 +206,7 @@ void RegistrationWindow::onRegisterClicked() {
     newPatient.id_patient = dm.getNextPatientId();
     newPatient.email = email;
     newPatient.fname = username;
-    newPatient.password = hashPassword(password);  // Хешируем пароль перед сохранением
+    newPatient.password = hashPassword(password);  // Хешируем пароль с солью перед сохранением
 
     dm.addPatient(newPatient);
     
@@ -209,32 +223,32 @@ void RegistrationWindow::onLoginClicked() {
 void RegistrationWindow::onPasswordToggle() {
     if (passwordInput->echoMode() == QLineEdit::Password) {
         passwordInput->setEchoMode(QLineEdit::Normal);
-        passwordToggleButton->setText("🙈");
+           passwordToggleButton->setText("🙈");
     } else {
         passwordInput->setEchoMode(QLineEdit::Password);
-        passwordToggleButton->setText("👁");
+           passwordToggleButton->setText("👁️");
     }
 }
 
 void RegistrationWindow::onConfirmPasswordToggle() {
     if (confirmPasswordInput->echoMode() == QLineEdit::Password) {
         confirmPasswordInput->setEchoMode(QLineEdit::Normal);
-        confirmPasswordToggleButton->setText("🙈");
+           confirmPasswordToggleButton->setText("🙈");
     } else {
         confirmPasswordInput->setEchoMode(QLineEdit::Password);
-        confirmPasswordToggleButton->setText("👁");
+           confirmPasswordToggleButton->setText("👁️");
     }
 }
 
 void RegistrationWindow::validatePasswords() {
     if (passwordInput->text() != confirmPasswordInput->text()) {
-        passwordMatchLabel->setText("❌ Пароли не совпадают");
+        passwordMatchLabel->setText("Пароли не совпадают");
         passwordMatchLabel->setProperty("class", "hint-label-error");
         passwordMatchLabel->style()->unpolish(passwordMatchLabel);
         passwordMatchLabel->style()->polish(passwordMatchLabel);
         registerButton->setEnabled(false);
     } else if (!passwordInput->text().isEmpty()) {
-        passwordMatchLabel->setText("✓ Пароли совпадают");
+        passwordMatchLabel->setText("Пароли совпадают");
         passwordMatchLabel->setProperty("class", "hint-label-success");
         passwordMatchLabel->style()->unpolish(passwordMatchLabel);
         passwordMatchLabel->style()->polish(passwordMatchLabel);

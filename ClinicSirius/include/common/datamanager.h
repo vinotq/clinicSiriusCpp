@@ -52,6 +52,7 @@ public:
     QList<AppointmentSchedule> getAllSchedules() const;
     QList<AppointmentSchedule> getDoctorSchedules(int doctorId) const;
     QList<AppointmentSchedule> getAvailableSchedules(int doctorId) const;
+    QList<AppointmentSchedule> getSchedulesByRoom(int roomId) const;
     QList<Appointment> getAppointmentsByDoctor(int doctorId) const;
     
     // Patient Group operations
@@ -119,6 +120,12 @@ public:
     
     // Admin login
     bool adminLogin(int id, const QString& password) const;
+    // Admin helpers
+    QList<Admin> getAllAdmins() const;
+    Admin getAdminById(int id) const;
+    Admin getAdminByEmail(const QString& email) const;
+    bool adminLoginByEmail(const QString& email, const QString& password) const;
+    void updateAdmin(const Admin& admin); // CHANGED: Add updateAdmin method
     
     // Authentication
     bool patientLoginByEmail(const QString& email, const QString& password) const;
