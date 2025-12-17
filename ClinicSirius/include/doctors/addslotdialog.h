@@ -37,6 +37,9 @@ private:
     QComboBox *roomCombo;
     QPushButton *addButton;
     QPushButton *cancelButton;
+    QPushButton *preset30;
+    QPushButton *preset45;
+    QPushButton *preset60;
 
     QTime _defaultStartTime = QTime(10, 0); // по умолчанию 10:00, но можно менять
     int _defaultDurationMin = 60;           // по умолчанию 60 минут, но можно менять

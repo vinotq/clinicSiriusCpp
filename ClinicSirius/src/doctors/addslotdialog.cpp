@@ -33,12 +33,12 @@ void AddSlotDialog::buildUI() {
     QFormLayout *form = new QFormLayout();
 
     QLabel *titleLabel = new QLabel("Добавление окна приема");
-    titleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+    titleLabel->setProperty("class", "dialog-title");
     main->addWidget(titleLabel);
 
     QLabel *infoLabel = new QLabel("Вы можете создать плавающее окно приема на любое время в диапазоне от 6:00 до 22:00");
     infoLabel->setWordWrap(true);
-    infoLabel->setStyleSheet("color: #666; font-size: 11px; margin-bottom: 10px;");
+    infoLabel->setProperty("class", "muted-text");
     main->addWidget(infoLabel);
 
     dateEdit = new QDateEdit();
@@ -57,11 +57,27 @@ void AddSlotDialog::buildUI() {
     durationSpinBox->setValue(_defaultDurationMin);
     durationSpinBox->setSuffix(" мин");
 
+    // Create duration layout with preset buttons
+    QHBoxLayout *durationLayout = new QHBoxLayout();
+    durationLayout->addWidget(durationSpinBox);
+    
+    preset30 = new QPushButton("30 мин");
+    preset30->setMaximumWidth(70);
+    preset45 = new QPushButton("45 мин");
+    preset45->setMaximumWidth(70);
+    preset60 = new QPushButton("60 мин");
+    preset60->setMaximumWidth(70);
+    
+    durationLayout->addWidget(preset30);
+    durationLayout->addWidget(preset45);
+    durationLayout->addWidget(preset60);
+    durationLayout->addStretch();
+
     roomCombo = new QComboBox();
 
     form->addRow("Дата:", dateEdit);
     form->addRow("Время начала:", startTimeEdit);
-    form->addRow("Длительность:", durationSpinBox);
+    form->addRow("Длительность:", durationLayout);
     form->addRow("Кабинет:", roomCombo);
 
     addButton = new QPushButton("Добавить");
@@ -76,6 +92,11 @@ void AddSlotDialog::buildUI() {
 
     connect(addButton, &QPushButton::clicked, this, &AddSlotDialog::onAddSlot);
     connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
+    
+    // Connect preset duration buttons
+    connect(preset30, &QPushButton::clicked, [this]() { durationSpinBox->setValue(30); });
+    connect(preset45, &QPushButton::clicked, [this]() { durationSpinBox->setValue(45); });
+    connect(preset60, &QPushButton::clicked, [this]() { durationSpinBox->setValue(60); });
 }
 
 void AddSlotDialog::loadRooms() {
@@ -92,8 +113,27 @@ void AddSlotDialog::loadRooms() {
 }
 
 void AddSlotDialog::onAddSlot() {
+    // Validate duration
+    if (durationSpinBox->value() <= 0) {
+        QMessageBox::warning(this, "Ошибка", "Длительность должна быть больше 0 минут.");
+        return;
+    }
+    
+    QTime startT = startTimeEdit->time();
+    // Validate start time is within 6:00-22:00
+    if (startT < QTime(6, 0) || startT >= QTime(22, 0)) {
+        QMessageBox::warning(this, "Ошибка", "Время начала должно быть между 6:00 и 22:00.");
+        return;
+    }
+    
     QDateTime from = QDateTime(dateEdit->date(), startTimeEdit->time());
     QDateTime to = from.addSecs(durationSpinBox->value() * 60);
+    
+    // Validate end time does not exceed 22:00
+    if (to.time() > QTime(22, 0)) {
+        QMessageBox::warning(this, "Ошибка", "Окончание не может быть после 22:00.");
+        return;
+    }
 
     AppointmentSchedule schedule;
     schedule.id_ap_sch = dataManager.getNextScheduleId();

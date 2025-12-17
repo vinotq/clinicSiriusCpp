@@ -30,7 +30,7 @@ void DoctorVisitDialog::buildVisitUI() {
     QFormLayout *form = new QFormLayout();
 
     QLabel *titleLabel = new QLabel("Прием пациента");
-    titleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+    titleLabel->setProperty("class", "dialog-title");
     main->addWidget(titleLabel);
 
     patientCombo = new QComboBox();
@@ -88,7 +88,7 @@ void DoctorVisitDialog::buildBookingUI() {
     QFormLayout *form = new QFormLayout();
 
     QLabel *titleLabel = new QLabel("Запись пациента на прием");
-    titleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+    titleLabel->setProperty("class", "dialog-title");
     main->addWidget(titleLabel);
 
     patientComboBooking = new QComboBox();
@@ -137,15 +137,18 @@ void DoctorVisitDialog::buildBookingUI() {
     }
     
     bookButton = new QPushButton("Записать");
+    cancelBookingButton = new QPushButton("Отменить запись");
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(bookButton);
     actions->addStretch();
+    actions->addWidget(cancelBookingButton);
     main->addLayout(form);
     main->addWidget(bookingStatusLabel);
     main->addLayout(actions);
 
     connect(bookButton, &QPushButton::clicked, this, &DoctorVisitDialog::onSaveAppointment);
+    connect(cancelBookingButton, &QPushButton::clicked, this, &DoctorVisitDialog::onCancelBooking);
 }
 
 void DoctorVisitDialog::loadPatients() {
@@ -268,24 +271,32 @@ void DoctorVisitDialog::onSaveAppointment() {
         }
         
         patientId = patientComboBooking->currentData().toInt();
-        // If user typed a name (completer) but didn't select, try to find matching name
+        // If user typed a name (completer) but didn't select, try to find matching name with exact match first, then partial
         if (patientId <= 0) {
-            QString txt = patientComboBooking->currentText().trimmed();
+            QString txt = patientComboBooking->currentText().trimmed().toLower();
             if (!txt.isEmpty()) {
-                // Manual case-insensitive lookup through items
+                int bestMatchIdx = -1;
+                // First pass: exact case-insensitive match
                 for (int i = 0; i < patientComboBooking->count(); ++i) {
-                    QString itext = patientComboBooking->itemText(i);
-                    if (QString::compare(itext.trimmed(), txt, Qt::CaseInsensitive) == 0) {
+                    QString itext = patientComboBooking->itemText(i).toLower();
+                    if (itext == txt) {
                         patientId = patientComboBooking->itemData(i).toInt();
                         break;
+                    } else if (itext.contains(txt) && bestMatchIdx == -1) {
+                        bestMatchIdx = i; // Store first partial match
                     }
+                }
+                // If no exact match found, use partial match
+                if (patientId <= 0 && bestMatchIdx != -1) {
+                    patientId = patientComboBooking->itemData(bestMatchIdx).toInt();
+                    patientComboBooking->setCurrentIndex(bestMatchIdx); // Auto-select
                 }
             }
         }
         doctorIdForBooking = doctorComboBooking->currentData().toInt();
         
         if (patientId <= 0) {
-            QMessageBox::warning(this, "Ошибка", "Выберите пациента");
+            QMessageBox::warning(this, "Ошибка", "Пациент не найден. Выберите из списка или уточните фамилию.");
             return;
         }
         
@@ -379,6 +390,10 @@ void DoctorVisitDialog::onFinishVisit() {
                 QVariant v = diagnosisCombo->currentData();
                 if (v.isValid()) diagId = v.toInt();
             }
+            // If no diagnosis selected (diagId == -1) and there are diagnoses available, use first one as default
+            if (diagId == -1 && diagnosisCombo && diagnosisCombo->count() > 0) {
+                diagId = diagnosisCombo->itemData(0).toInt();
+            }
             r.id_diagnosis = diagId;
             r.complaints = complaintsEdit->toPlainText();
             r.recommendations = recommendationsEdit->toPlainText();
@@ -397,4 +412,34 @@ void DoctorVisitDialog::onFinishVisit() {
 }
 void DoctorVisitDialog::onSelectDoctorForBooking() {
     loadSchedulesForSelectedDoctor();
+}
+
+void DoctorVisitDialog::onCancelBooking() {
+    // Cancel booking for a selected schedule slot (only if mode == booking and scheduleId >= 0)
+    if (mode != 1 || scheduleId < 0) {
+        reject();
+        return;
+    }
+    
+    AppointmentSchedule sch = dataManager.getScheduleById(scheduleId);
+    if (sch.id_ap_sch <= 0) {
+        QMessageBox::warning(this, "Ошибка", "Не удалось найти слот расписания");
+        return;
+    }
+    
+    // Mark schedule as free (not booked)
+    sch.status = "free";
+    dataManager.updateSchedule(sch);
+    
+    // Delete any associated appointments for this schedule
+    QList<Appointment> appts = dataManager.getAppointmentsByDoctor(doctorId);
+    for (const Appointment &a : appts) {
+        if (a.id_ap_sch == scheduleId) {
+            dataManager.deleteAppointment(a.id_ap);
+        }
+    }
+    
+    QMessageBox::information(this, "Готово", "Запись отменена");
+    emit appointmentSaved(); // Refresh parent view
+    reject();
 }

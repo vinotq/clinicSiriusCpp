@@ -52,11 +52,14 @@ void PatientHistoryWidget::onSearchClicked() {
         return;
     }
 
+    QString queryLower = query.toLower();
     QList<Patient> all = m_dataManager.getAllPatients();
     for (const auto &p : all) {
-        QString fullname = p.fullName();
-        if (fullname.contains(query, Qt::CaseInsensitive)) {
-            QListWidgetItem *it = new QListWidgetItem(fullname);
+        QString fullname = p.fullName().toLower();
+        QString phone = p.phone_number;
+        // Search by fullname contains or phone number contains
+        if (fullname.contains(queryLower) || phone.contains(query)) {
+            QListWidgetItem *it = new QListWidgetItem(p.fullName());
             it->setData(Qt::UserRole, p.id_patient);
             m_patientsList->addItem(it);
         }
@@ -106,12 +109,13 @@ void PatientHistoryWidget::onAppointmentSelected(QListWidgetItem *item) {
     detailDialog->setWindowTitle(QString("Детали приёма №%1").arg(appointmentId));
     detailDialog->setMinimumWidth(500);
     detailDialog->setMinimumHeight(400);
+    detailDialog->setModal(false);  // Non-modal dialog
     
     QVBoxLayout *layout = new QVBoxLayout(detailDialog);
     
     QLabel *headerLabel = new QLabel(QString("Врач: %1 %2\nДата: %3")
         .arg(d.fname, d.lname, ap.date.toString("dd.MM.yyyy HH:mm")));
-    headerLabel->setStyleSheet("font-weight: bold; font-size: 12pt;");
+    headerLabel->setProperty("class", "detail-header");
     layout->addWidget(headerLabel);
     
     layout->addWidget(new QLabel("Диагноз:"));
@@ -133,10 +137,12 @@ void PatientHistoryWidget::onAppointmentSelected(QListWidgetItem *item) {
     recsEdit->setReadOnly(true);
     layout->addWidget(recsEdit);
     
-    QPushButton *backBtn = new QPushButton("◀ Назад");
-    connect(backBtn, &QPushButton::clicked, detailDialog, &QDialog::accept);
+    QPushButton *backBtn = new QPushButton("Назад");
+    backBtn->setText("← " + backBtn->text());
+    backBtn->setIconSize(QSize(16,16));
+    connect(backBtn, &QPushButton::clicked, detailDialog, &QDialog::close);
     layout->addWidget(backBtn);
     
-    detailDialog->exec();
-    detailDialog->deleteLater();
+    detailDialog->setAttribute(Qt::WA_DeleteOnClose);  // Auto-delete on close
+    detailDialog->show();  // Non-blocking show instead of exec
 }

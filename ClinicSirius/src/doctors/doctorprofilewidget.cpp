@@ -65,8 +65,12 @@ void DoctorProfileWidget::buildUI() {
     settingsLayout->addWidget(settingsSection);
 
     saveStatusLabel = new QLabel();
-    saveButton = new QPushButton("💾 Сохранить");
-    deleteButton = new QPushButton("🗑 Удалить профиль");
+    saveButton = new QPushButton("Сохранить");
+    saveButton->setText(QString::fromUtf8("✅ ") + saveButton->text());
+    saveButton->setIconSize(QSize(14,14));
+    deleteButton = new QPushButton("Удалить профиль");
+    deleteButton->setText(QString::fromUtf8("❌ ") + deleteButton->text());
+    deleteButton->setIconSize(QSize(14,14));
 
     QHBoxLayout *actions = new QHBoxLayout();
     actions->addWidget(saveButton);
@@ -110,6 +114,35 @@ void DoctorProfileWidget::loadProfile() {
 }
 
 void DoctorProfileWidget::onSaveProfile() {
+    // Validate required fields
+    if (firstNameEdit->text().isEmpty() || lastNameEdit->text().isEmpty()) {
+        saveStatusLabel->setText("Имя и фамилия обязательны.");
+        return;
+    }
+    
+    // Validate email format (simple check)
+    QString email = emailEdit->text();
+    if (!email.isEmpty() && !email.contains("@")) {
+        saveStatusLabel->setText("Неверный формат email.");
+        return;
+    }
+    
+    // Validate phone (only digits if not empty)
+    QString phone = phoneEdit->text();
+    if (!phone.isEmpty()) {
+        bool allDigits = true;
+        for (QChar c : phone) {
+            if (!c.isDigit()) {
+                allDigits = false;
+                break;
+            }
+        }
+        if (!allDigits) {
+            saveStatusLabel->setText("Телефон должен содержать только цифры.");
+            return;
+        }
+    }
+    
     Doctor doctor = dataManager.getDoctorById(currentUser.id);
     doctor.fname = firstNameEdit->text();
     doctor.lname = lastNameEdit->text();
@@ -119,7 +152,7 @@ void DoctorProfileWidget::onSaveProfile() {
     doctor.phone_number = phoneEdit->text();
 
     dataManager.updateDoctor(doctor);
-    saveStatusLabel->setText("✓ Профиль сохранен");
+    saveStatusLabel->setText("Профиль сохранен");
     QTimer::singleShot(2000, [this]() {
         saveStatusLabel->setText("");
     });
@@ -127,12 +160,40 @@ void DoctorProfileWidget::onSaveProfile() {
 }
 
 void DoctorProfileWidget::onDeleteAccount() {
+    // Check for associated schedules and appointments
+    QList<AppointmentSchedule> schedules = dataManager.getDoctorSchedules(currentUser.id);
+    QList<Appointment> appointments = dataManager.getAppointmentsByDoctor(currentUser.id);
+    
+    QString deleteMsg = "Вы уверены, что хотите удалить свой профиль? Это действие необратимо.";
+    if (!schedules.isEmpty() || !appointments.isEmpty()) {
+        deleteMsg += QString("\n\nВнимание: У вас есть ");
+        if (!schedules.isEmpty()) {
+            deleteMsg += QString("%1 активных слотов расписания").arg(schedules.count());
+        }
+        if (!appointments.isEmpty()) {
+            if (!schedules.isEmpty()) deleteMsg += " и ";
+            deleteMsg += QString("%1 записанных приемов").arg(appointments.count());
+        }
+        deleteMsg += ". Все они будут удалены.";
+    }
+    
     QMessageBox::StandardButton reply = QMessageBox::question(this, 
         "Удаление профиля", 
-        "Вы уверены, что хотите удалить свой профиль? Это действие необратимо.",
+        deleteMsg,
         QMessageBox::Yes | QMessageBox::No);
     
     if (reply == QMessageBox::Yes) {
+        // Delete associated schedules
+        for (const auto& sch : schedules) {
+            dataManager.deleteSchedule(sch.id_ap_sch);
+        }
+        
+        // Delete associated appointments
+        for (const auto& app : appointments) {
+            dataManager.deleteAppointment(app.id_ap);
+        }
+        
+        // Delete the doctor account
         dataManager.deleteDoctor(currentUser.id);
         emit requestAccountDeletion();
     }
