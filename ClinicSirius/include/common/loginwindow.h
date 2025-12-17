@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QLabel>
+#include <QPlainTextEdit>
 
 class LoginWindow : public QWidget {
     Q_OBJECT
@@ -21,6 +22,7 @@ private slots:
     void onLoginClicked();
     void onRegistrationClicked();
     void onPasswordToggle();
+    void copyTestUsersToClipboard();
 
 private:
     void setupUI();
@@ -33,7 +35,9 @@ private:
     QPushButton *loginButton;
     QPushButton *passwordToggleButton;
     QPushButton *registrationButton;
+    QPushButton *copyUsersButton;
     QLabel *errorLabel;
+    QPlainTextEdit *testUsersText;
 };
 
-#endif // LOGINWINDOW_H
+#endif

@@ -50,10 +50,10 @@ void AdminWidget::buildUI() {
     doctorsTable->setHorizontalHeaderLabels({"ID", "ФИО", "Email", "Специализация"});
     dlay->addWidget(doctorsTable);
     QHBoxLayout *dActions = new QHBoxLayout();
-    addDoctorBtn = new QPushButton("Добавить");
-    editDoctorBtn = new QPushButton("Изменить");
-    deleteDoctorBtn = new QPushButton("Удалить");
-    manageScheduleBtn = new QPushButton("Управлять расписанием");
+    addDoctorBtn = new QPushButton("➕ Добавить");
+    editDoctorBtn = new QPushButton("✏️ Изменить");
+    deleteDoctorBtn = new QPushButton("🗑 Удалить");
+    manageScheduleBtn = new QPushButton("📅 Управлять расписанием");
     dActions->addWidget(addDoctorBtn);
     dActions->addWidget(editDoctorBtn);
     dActions->addWidget(deleteDoctorBtn);
@@ -74,10 +74,10 @@ void AdminWidget::buildUI() {
     patientsTable->setHorizontalHeaderLabels({"ID", "ФИО", "Email", "Телефон"});
     play->addWidget(patientsTable);
     QHBoxLayout *pActions = new QHBoxLayout();
-    addPatientBtn = new QPushButton("Добавить");
-    editPatientBtn = new QPushButton("Изменить");
-    deletePatientBtn = new QPushButton("Удалить");
-    viewAppointmentsBtn = new QPushButton("Просмотреть приёмы");
+    addPatientBtn = new QPushButton("➕ Добавить");
+    editPatientBtn = new QPushButton("✏️ Изменить");
+    deletePatientBtn = new QPushButton("🗑 Удалить");
+    viewAppointmentsBtn = new QPushButton("📋 Просмотреть приёмы");
     pActions->addWidget(addPatientBtn);
     pActions->addWidget(editPatientBtn);
     pActions->addWidget(deletePatientBtn);
@@ -98,9 +98,9 @@ void AdminWidget::buildUI() {
     managersTable->setHorizontalHeaderLabels({"ID", "ФИО", "Email"});
     mlay->addWidget(managersTable);
     QHBoxLayout *mActions = new QHBoxLayout();
-    addManagerBtn = new QPushButton("Добавить");
-    editManagerBtn = new QPushButton("Изменить");
-    deleteManagerBtn = new QPushButton("Удалить");
+    addManagerBtn = new QPushButton("➕ Добавить");
+    editManagerBtn = new QPushButton("✏️ Изменить");
+    deleteManagerBtn = new QPushButton("🗑 Удалить");
     mActions->addWidget(addManagerBtn);
     mActions->addWidget(editManagerBtn);
     mActions->addWidget(deleteManagerBtn);
@@ -176,7 +176,7 @@ void AdminWidget::loadDoctors() {
 
 void AdminWidget::onAddDoctor() {
     QDialog dlg(this);
-    dlg.setWindowTitle("Добавить врача");
+    dlg.setWindowTitle("➕ Добавить врача");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit();
     QLineEdit *lname = new QLineEdit();
@@ -247,7 +247,7 @@ void AdminWidget::onEditDoctor() {
     int id = doctorsTable->item(row, 0)->text().toInt();
     Doctor d = dataManager->getDoctorById(id);
     QDialog dlg(this);
-    dlg.setWindowTitle("Редактировать врача");
+    dlg.setWindowTitle("✏️ Редактировать врача");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit(d.fname);
     QLineEdit *lname = new QLineEdit(d.lname);
@@ -390,7 +390,7 @@ void AdminWidget::loadPatients() {
 
 void AdminWidget::onAddPatient() {
     QDialog dlg(this);
-    dlg.setWindowTitle("Добавить пациента");
+    dlg.setWindowTitle("➕ Добавить пациента");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit();
     QLineEdit *lname = new QLineEdit();
@@ -461,7 +461,7 @@ void AdminWidget::onEditPatient() {
     int id = patientsTable->item(row, 0)->text().toInt();
     Patient p = dataManager->getPatientById(id);
     QDialog dlg(this);
-    dlg.setWindowTitle("Редактировать пациента");
+    dlg.setWindowTitle("✍️ Редактировать пациента");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit(p.fname);
     QLineEdit *lname = new QLineEdit(p.lname);
@@ -581,7 +581,7 @@ void AdminWidget::loadManagers() {
 
 void AdminWidget::onAddManager() {
     QDialog dlg(this);
-    dlg.setWindowTitle("Добавить менеджера");
+    dlg.setWindowTitle("➕ Добавить менеджера");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit();
     QLineEdit *lname = new QLineEdit();
@@ -635,7 +635,7 @@ void AdminWidget::onEditManager() {
     int id = managersTable->item(row, 0)->text().toInt();
     Manager m = dataManager->getManagerById(id);
     QDialog dlg(this);
-    dlg.setWindowTitle("Редактировать менеджера");
+    dlg.setWindowTitle("✏️ Редактировать менеджера");
     QFormLayout form(&dlg);
     QLineEdit *fname = new QLineEdit(m.fname);
     QLineEdit *lname = new QLineEdit(m.lname);

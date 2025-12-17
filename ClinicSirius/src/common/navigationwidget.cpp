@@ -24,9 +24,9 @@ void NavigationWidget::setupUI() {
 
     layout->addSpacing(20);
 
-    homeButton = new QPushButton("Главная");
-    profileButton = new QPushButton("Профиль");
-    appointmentsButton = new QPushButton("Приёмы");
+    homeButton = new QPushButton("🏠 Главная");
+    profileButton = new QPushButton("👤 Профиль");
+    appointmentsButton = new QPushButton("📅 Приёмы");
 
     layout->addWidget(homeButton);
     layout->addWidget(profileButton);
@@ -34,7 +34,7 @@ void NavigationWidget::setupUI() {
 
     layout->addStretch();
 
-    logoutButton = new QPushButton("Выход");
+    logoutButton = new QPushButton("🚪 Выход");
     layout->addWidget(logoutButton);
 
     connect(homeButton, &QPushButton::clicked, this, &NavigationWidget::homeClicked);

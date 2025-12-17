@@ -196,13 +196,13 @@ void StatisticsWidget::buildUI() {
     // Header with period label and navigation
     QHBoxLayout *header = new QHBoxLayout();
     prevBtn = new QPushButton();
-    prevBtn->setText("←");
+    prevBtn->setText("⬅️");
     prevBtn->setIconSize(QSize(16,16));
     nextBtn = new QPushButton();
-    nextBtn->setText("→");
+    nextBtn->setText("➡️");
     nextBtn->setIconSize(QSize(16,16));
     periodLabel = new QLabel();
-    choosePeriodBtn = new QPushButton("Выбрать период");
+    choosePeriodBtn = new QPushButton("📆 Выбрать период");
     header->addWidget(prevBtn);
     header->addWidget(periodLabel);
     header->addWidget(nextBtn);
@@ -270,7 +270,7 @@ void StatisticsWidget::buildUI() {
 
     // Footer with refresh only (suggestions removed)
     QHBoxLayout *footer = new QHBoxLayout();
-    QPushButton *refreshBtn = new QPushButton("Обновить");
+    QPushButton *refreshBtn = new QPushButton("🔄 Обновить данные");
     footer->addWidget(refreshBtn);
     footer->addStretch();
     main->addLayout(footer);

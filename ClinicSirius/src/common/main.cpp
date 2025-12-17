@@ -7,13 +7,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     
-    // Отключаем использование системной палитры
     app.setDesktopSettingsAware(false);
     
-    // Используем Fusion стиль для консистентности и отключаем ялобые темы
     app.setStyle(QStyleFactory::create("Fusion"));
     
-    // Создаем кастомную палитру с нашими цветами
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(255, 255, 255));
     darkPalette.setColor(QPalette::WindowText, QColor(31, 41, 55));
@@ -30,10 +27,8 @@ int main(int argc, char *argv[])
     darkPalette.setColor(QPalette::HighlightedText, QColor(255, 255, 255));
     app.setPalette(darkPalette);
     
-    // Загрузка стилей из ресурсов или локального файла
     QFile styleFile(":/styles.qss");
     if (!styleFile.open(QFile::ReadOnly)) {
-        // fallback to workspace resources path (when running from source tree)
         styleFile.setFileName("resources/styles.qss");
         styleFile.open(QFile::ReadOnly);
     }
@@ -44,7 +39,7 @@ int main(int argc, char *argv[])
     }
     
     AuthWindow window;
-    window.show();
+    window.showMaximized();
     
     return app.exec();
 }

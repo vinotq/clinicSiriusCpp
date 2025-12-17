@@ -51,10 +51,9 @@ void AddByCodeDialog::setupUI() {
 
     // Кнопки
     QHBoxLayout *buttonLayout = new QHBoxLayout();
-    addButton = new QPushButton("Присоединиться");
-    addButton->setText(QString::fromUtf8("✅ ") + addButton->text());
+    addButton = new QPushButton("✅ Присоединиться");
     addButton->setMinimumHeight(36);
-    QPushButton *cancelButton = new QPushButton("Отмена");
+    QPushButton *cancelButton = new QPushButton("❌ Отмена");
     cancelButton->setMinimumHeight(36);
 
     buttonLayout->addStretch();

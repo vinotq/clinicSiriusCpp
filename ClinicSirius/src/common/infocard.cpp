@@ -65,7 +65,7 @@ void InfoCard::setIcon(const QString &iconPath) {
     if (key.contains("clinic") || key.contains("sirius")) emoji = "🏥";
     else if (key.contains("doctor") || key.contains("medical")) emoji = QString::fromUtf8("👩\u200D⚕️");
     else if (key.contains("check")) emoji = "✅";
-    else if (key.contains("cancel") || key.contains("delete")) emoji = "❌";
+    else if (key.contains("cancel") || key.contains("delete")) emoji = "🗑";
     else if (key.contains("eye-off")) emoji = "🙈";
     else if (key.contains("eye") || key.contains("visibility")) emoji = "👁️";
     else if (key.contains("profile") || key.contains("account")) emoji = "👤";

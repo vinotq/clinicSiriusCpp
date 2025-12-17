@@ -78,8 +78,8 @@ private:
     class ManagerWidget *managerWidget;
     class ManagerProfileWidget *managerProfileWidget;
     AdminWidget *adminWidget;
-    AdminProfileWidget *adminProfileWidget; // CHANGED: Add admin profile widget
+    AdminProfileWidget *adminProfileWidget;
     LoginUser currentUser;
 };
 
-#endif // MAINPAGE_H
+#endif

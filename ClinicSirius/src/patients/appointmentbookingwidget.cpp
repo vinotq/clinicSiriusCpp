@@ -23,8 +23,6 @@
 #include "patients/createpatientdialog.h"
 #include "patients/patientselectiondialog.h"
 
-// ========== SpecialtyCard ==========
-
 SpecialtyCard::SpecialtyCard(int id, const QString& name, QWidget* parent)
     : QWidget(parent), m_id(id), m_name(name) {
     setupUI();
@@ -52,8 +50,6 @@ void SpecialtyCard::mouseReleaseEvent(QMouseEvent* event) {
     Q_UNUSED(event);
     emit clicked();
 }
-
-// ========== DoctorCard ==========
 
 DoctorCard::DoctorCard(int id, const QString& name, QWidget* parent)
     : QWidget(parent), m_id(id), m_name(name) {
@@ -90,8 +86,6 @@ void DoctorCard::mouseReleaseEvent(QMouseEvent* event) {
     emit clicked();
 }
 
-// ========== AppointmentBookingWidget ==========
-
 AppointmentBookingWidget::AppointmentBookingWidget(QWidget* parent)
     : QWidget(parent), m_dataManager(QString()) {
     setupUI();
@@ -109,7 +103,6 @@ void AppointmentBookingWidget::setInitialSelection(int doctorId, int scheduleId)
         if (sch.id_ap_sch > 0) {
             m_selectedScheduleId = sch.id_ap_sch;
             m_selectedDateTime = sch.time_from;
-            // Jump directly to patient selection for quick booking
             showPatientSelection();
             return;
         }
@@ -121,7 +114,6 @@ void AppointmentBookingWidget::setInitialSelection(int doctorId, int scheduleId)
 }
 
 void AppointmentBookingWidget::setRescheduleMode(int appointmentId, int doctorId) {
-    // REQ-017: Set up reschedule mode
     m_isRescheduleMode = true;
     m_rescheduleAppointmentId = appointmentId;
     m_selectedDoctorId = doctorId;
@@ -142,9 +134,8 @@ void AppointmentBookingWidget::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(30, 20, 30, 20);
 
-    // Заголовок с кнопкой "Назад"
     QHBoxLayout* headerLayout = new QHBoxLayout();
-    m_backButton = new QPushButton("← Назад");
+    m_backButton = new QPushButton("⬅️ Назад");
     m_backButton->setMaximumWidth(100);
     m_backButton->setProperty("class", "back-button");
     m_titleLabel = new QLabel("Запись к врачу");
@@ -157,10 +148,8 @@ void AppointmentBookingWidget::setupUI() {
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_progressLabel);
 
-    // Stacked Widget для показа разных этапов
     m_stackedWidget = new QStackedWidget();
 
-    // Этап 1: Выбор специальности
     QWidget* specialtyPage = new QWidget();
     QVBoxLayout* specialtyLayout = new QVBoxLayout(specialtyPage);
     specialtyLayout->setContentsMargins(0, 0, 0, 0);
@@ -169,7 +158,6 @@ void AppointmentBookingWidget::setupUI() {
     specialtyGridLayout->setSpacing(15);
 
     QList<Specialization> specs = m_dataManager.getAllSpecializations();
-    // sort specializations alphabetically
     std::sort(specs.begin(), specs.end(), [](const Specialization &a, const Specialization &b){ return a.name.toLower() < b.name.toLower(); });
     int row = 0, col = 0;
     for (const auto& spec : specs) {
@@ -193,7 +181,6 @@ void AppointmentBookingWidget::setupUI() {
     specialtyScroll->setProperty("class", "no-border-scrollarea");
     m_stackedWidget->addWidget(specialtyScroll);
 
-    // Этап 2: Выбор врача
     QWidget* doctorPage = new QWidget();
     QVBoxLayout* doctorLayout = new QVBoxLayout(doctorPage);
     doctorLayout->setContentsMargins(0, 0, 0, 0);
@@ -210,15 +197,13 @@ void AppointmentBookingWidget::setupUI() {
     doctorScroll->setProperty("class", "no-border-scrollarea");
     m_stackedWidget->addWidget(doctorScroll);
 
-    // Этап 3: Выбор даты и времени
     QWidget* slotPage = new QWidget();
     QVBoxLayout* slotLayout = new QVBoxLayout(slotPage);
     slotLayout->setContentsMargins(0, 0, 0, 0);
 
-    // REQ-011: Add info label about invalid slots
     QLabel* slotInfoLabel = new QLabel();
     slotInfoLabel->setText("Серые слоты недоступны: прошедшие, занятые или завершенные приемы");
-    slotInfoLabel->setStyleSheet("color: #666; font-size: 10pt; padding: 8px;");
+    slotInfoLabel->setProperty("class", "slot-info-label");
     slotInfoLabel->setWordWrap(true);
     slotLayout->addWidget(slotInfoLabel);
 
@@ -251,7 +236,6 @@ void AppointmentBookingWidget::setupUI() {
     mainLayout->addLayout(headerLayout);
     mainLayout->addWidget(m_stackedWidget);
 
-    // Подключение сигналов
     connect(m_backButton, &QPushButton::clicked, this, &AppointmentBookingWidget::onBackClicked);
 
     m_stackedWidget->setCurrentIndex(0);
@@ -262,20 +246,16 @@ void AppointmentBookingWidget::onSpecialtySelected(int specialtyId) {
     m_titleLabel->setText("Выбор врача");
     m_progressLabel->setText("Шаг 2/5");
 
-    // Очищаем и заполняем врачей
     auto doctorPage = m_stackedWidget->widget(1);
     auto doctorGridLayout = doctorPage->findChild<QGridLayout*>("doctorGridLayout");
 
-    // Очищаем старые карточки
     QLayoutItem* item;
     while ((item = doctorGridLayout->takeAt(0)) != nullptr) {
         delete item->widget();
         delete item;
     }
 
-    // Добавляем новые карточки врачей
     QList<Doctor> allDoctors = m_dataManager.getAllDoctors();
-    // sort doctors alphabetically by full name
     std::sort(allDoctors.begin(), allDoctors.end(), [](const Doctor &a, const Doctor &b){ return a.fullName().toLower() < b.fullName().toLower(); });
     int row = 0, col = 0;
     for (const auto& doctor : allDoctors) {
@@ -317,7 +297,6 @@ void AppointmentBookingWidget::showSlotSelection() {
         return;
     }
 
-    // Загружаем доступные окна врача (только свободные и будущие)
     QList<AppointmentSchedule> availableSchedules = m_dataManager.getAvailableSchedules(m_selectedDoctorId);
     qDebug() << "showSlotSelection: Doctor" << m_selectedDoctorId << "has" << availableSchedules.size() << "available slots";
     
@@ -333,13 +312,11 @@ void AppointmentBookingWidget::showSlotSelection() {
     calendar->setMinimumDate(QDate::currentDate());
     calendar->setAvailableDates(datesWithSlots);
 
-    // Функция для загрузки слотов для выбранной даты
     auto loadSlots = [this, slotsList, availableSchedules](const QDate& date) {
         slotsList->clear();
 
         qDebug() << "Loading slots for date:" << date.toString("yyyy-MM-dd");
         
-        // Сортируем расписание по времени
         QList<AppointmentSchedule> slotsForDate;
         for (const auto& schedule : availableSchedules) {
             if (schedule.time_from.date() == date) {
@@ -349,7 +326,6 @@ void AppointmentBookingWidget::showSlotSelection() {
 
         qDebug() << "Found" << slotsForDate.size() << "slots for this date";
 
-        // Сортируем по времени
         std::sort(slotsForDate.begin(), slotsForDate.end(),
                   [](const AppointmentSchedule& a, const AppointmentSchedule& b) {
                       return a.time_from < b.time_from;
@@ -361,10 +337,9 @@ void AppointmentBookingWidget::showSlotSelection() {
             QString timeStr = schedule.time_from.toString("HH:mm");
             auto item = new QListWidgetItem(timeStr);
             item->setData(Qt::UserRole, schedule.time_from.toString(Qt::ISODate));
-            item->setData(Qt::UserRole + 1, schedule.id_ap_sch);  // Сохраняем id расписания
+            item->setData(Qt::UserRole + 1, schedule.id_ap_sch);
             item->setSizeHint(QSize(0, 35));
 
-            // REQ-011: Check if slot is valid (not past, not booked/busy, not done)
             bool isValid = true;
             QString invalidReason;
 
@@ -386,23 +361,20 @@ void AppointmentBookingWidget::showSlotSelection() {
                 item->setText(timeStr);
             } else {
                 item->setText(invalidReason);
-                item->setFlags(item->flags() & ~Qt::ItemIsSelectable); // Make non-selectable
-                item->setForeground(QColor("#999999")); // Gray out text
+                item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
+                item->setForeground(QColor("#999999"));
             }
 
             slotsList->addItem(item);
         }
     };
 
-    // Загружаем слоты для выбранной даты
     loadSlots(calendar->selectedDate());
 
-    // Отключаем старые подключения
     disconnect(calendar, nullptr, nullptr, nullptr);
     disconnect(slotOkButton, nullptr, nullptr, nullptr);
     disconnect(slotCancelButton, nullptr, nullptr, nullptr);
 
-    // Новые подключения
     connect(calendar, &AppointmentCalendar::selectionChanged, this, loadSlots);
 
     connect(slotOkButton, &QPushButton::clicked, this, [this, slotsList]() {
@@ -412,7 +384,6 @@ void AppointmentBookingWidget::showSlotSelection() {
             return;
         }
 
-        // REQ-011: Check if selected item is valid (not disabled/grayed out)
         if (!(item->flags() & Qt::ItemIsSelectable)) {
             QMessageBox::warning(this, "Ошибка", 
                 "Невозможно выбрать этот слот. " + item->text());
@@ -420,10 +391,8 @@ void AppointmentBookingWidget::showSlotSelection() {
         }
 
         m_selectedDateTime = QDateTime::fromString(item->data(Qt::UserRole).toString(), Qt::ISODate);
-        // Сохраняем id расписания, чтобы потом пометить слот как занятый
         m_selectedScheduleId = item->data(Qt::UserRole + 1).toInt();
         
-        // REQ-011: Validate that slot is available (not past, not booked, not done)
         AppointmentSchedule sch = m_dataManager.getScheduleById(m_selectedScheduleId);
         if (sch.id_ap_sch <= 0) {
             QMessageBox::warning(this, "Ошибка", "Слот не найден в системе");
@@ -451,7 +420,6 @@ void AppointmentBookingWidget::showSlotSelection() {
             return;
         }
 
-        // All validations passed
         showPatientSelection();
     });
 
@@ -461,7 +429,6 @@ void AppointmentBookingWidget::showSlotSelection() {
 }
 
 void AppointmentBookingWidget::showPatientSelection() {
-    // REQ-017: In reschedule mode, skip patient selection and go directly to confirmation
     if (m_isRescheduleMode) {
         showConfirmation();
         return;
@@ -471,19 +438,15 @@ void AppointmentBookingWidget::showPatientSelection() {
     m_progressLabel->setText("Шаг 4/5");
     QList<Patient> availablePatients;
 
-    // If current user is a patient — allow selecting only from own family (and self), or create new
     if (m_currentUser.type == LoginUser::PATIENT) {
         QSet<int> addedIds;
 
-        // include current user
         if (m_currentUser.id > 0) addedIds.insert(m_currentUser.id);
 
-        // get family relations where current user is parent or child
         QList<PatientGroup> allMembers = m_dataManager.getPatientFamilyMembers(m_currentUser.id);
         QList<PatientGroup> parentGroups = m_dataManager.getPatientParents(m_currentUser.id);
         for (const PatientGroup &pg : parentGroups) allMembers.append(pg);
 
-        // collect unique patient ids from family (parent->child or child->parent)
         for (const PatientGroup &pg : allMembers) {
             if (pg.id_parent == m_currentUser.id) {
                 if (pg.id_child > 0) addedIds.insert(pg.id_child);
@@ -492,19 +455,16 @@ void AppointmentBookingWidget::showPatientSelection() {
             }
         }
 
-        // Build patients list from ids, then sort alphabetically
         for (int id : addedIds.values()) {
             Patient p = m_dataManager.getPatientById(id);
             availablePatients.append(p);
         }
         std::sort(availablePatients.begin(), availablePatients.end(), [](const Patient &a, const Patient &b){ return a.fullName().toLower() < b.fullName().toLower(); });
     } else {
-        // non-patient users can choose any patient
         availablePatients = m_dataManager.getAllPatients();
         std::sort(availablePatients.begin(), availablePatients.end(), [](const Patient &a, const Patient &b){ return a.fullName().toLower() < b.fullName().toLower(); });
     }
 
-    // Show custom patient selection dialog
     PatientSelectionDialog dlg(this, availablePatients);
     if (dlg.exec() == QDialog::Accepted) {
         m_selectedPatient = dlg.getSelectedPatient();
@@ -514,7 +474,6 @@ void AppointmentBookingWidget::showPatientSelection() {
             onBackClicked();
         }
     } else {
-        // REQ-013: If from manager and Esc is pressed, close the widget (return to schedule viewer)
         if (m_isFromManager) {
             close();
         } else {
@@ -549,16 +508,13 @@ void AppointmentBookingWidget::showConfirmation() {
 }
 
 void AppointmentBookingWidget::onBookingConfirmed() {
-    // REQ-017: Handle reschedule mode vs. new booking
     if (m_isRescheduleMode) {
-        // Update existing appointment with new time
         Appointment appointment = m_dataManager.getAppointmentById(m_rescheduleAppointmentId);
         if (appointment.id_ap <= 0) {
             QMessageBox::warning(this, "Ошибка", "Запись не найдена");
             return;
         }
         
-        // Mark old slot as free
         if (m_oldScheduleId > 0) {
             AppointmentSchedule oldSch = m_dataManager.getScheduleById(m_oldScheduleId);
             if (oldSch.id_ap_sch > 0) {
@@ -567,12 +523,10 @@ void AppointmentBookingWidget::onBookingConfirmed() {
             }
         }
         
-        // Update appointment with new time and schedule
         appointment.date = m_selectedDateTime;
         appointment.id_ap_sch = m_selectedScheduleId;
         m_dataManager.updateAppointment(appointment);
         
-        // Mark new slot as booked
         if (m_selectedScheduleId > 0) {
             AppointmentSchedule newSch = m_dataManager.getScheduleById(m_selectedScheduleId);
             if (newSch.id_ap_sch > 0) {
@@ -583,17 +537,15 @@ void AppointmentBookingWidget::onBookingConfirmed() {
         
         QMessageBox::information(this, "Успех", "Запись перенесена на новое время");
     } else {
-        // Create new appointment
         Appointment appointment;
         appointment.id_ap = m_dataManager.getNextAppointmentId();
         appointment.id_patient = m_selectedPatient.id_patient;
         appointment.id_doctor = m_selectedDoctorId;
         appointment.date = m_selectedDateTime;
-        appointment.id_ap_sch = m_selectedScheduleId; // привязать к слоту
+        appointment.id_ap_sch = m_selectedScheduleId;
 
         m_dataManager.addAppointment(appointment);
 
-        // Пометить используемый слот как занятый
         if (m_selectedScheduleId > 0) {
             AppointmentSchedule sch = m_dataManager.getScheduleById(m_selectedScheduleId);
             if (sch.id_ap_sch > 0) {

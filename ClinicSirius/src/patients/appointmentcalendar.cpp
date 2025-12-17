@@ -75,7 +75,7 @@ void AppointmentCalendar::setupUI() {
     
     QPushButton* prevBtn = new QPushButton();
     prevBtn->setMaximumWidth(40);
-    prevBtn->setText("←");
+    prevBtn->setText("⬅️");
     prevBtn->setIconSize(QSize(16,16));
     connect(prevBtn, &QPushButton::clicked, this, &AppointmentCalendar::onPrevMonth);
     
@@ -88,7 +88,7 @@ void AppointmentCalendar::setupUI() {
     monthFont.setBold(true);
     monthLabel->setFont(monthFont);
     
-    QPushButton* nextBtn = new QPushButton("→");
+    QPushButton* nextBtn = new QPushButton("➡️");
     nextBtn->setMaximumWidth(40);
     connect(nextBtn, &QPushButton::clicked, this, &AppointmentCalendar::onNextMonth);
     

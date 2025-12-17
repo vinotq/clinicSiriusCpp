@@ -65,11 +65,9 @@ void DoctorProfileWidget::buildUI() {
     settingsLayout->addWidget(settingsSection);
 
     saveStatusLabel = new QLabel();
-    saveButton = new QPushButton("Сохранить");
-    saveButton->setText(QString::fromUtf8("✅ ") + saveButton->text());
+    saveButton = new QPushButton("💾 Сохранить");
     saveButton->setIconSize(QSize(14,14));
-    deleteButton = new QPushButton("Удалить профиль");
-    deleteButton->setText(QString::fromUtf8("❌ ") + deleteButton->text());
+    deleteButton = new QPushButton("🗑 Удалить профиль");
     deleteButton->setIconSize(QSize(14,14));
 
     QHBoxLayout *actions = new QHBoxLayout();

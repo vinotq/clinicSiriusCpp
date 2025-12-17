@@ -23,9 +23,9 @@ void PatientManagementDialog::buildUI() {
     m_searchEdit = new QLineEdit();
     m_searchEdit->setPlaceholderText("Поиск по ФИО, email или ID...");
     
-    m_createBtn = new QPushButton("+ Создать");
-    m_editBtn = new QPushButton("✎ Редактировать");
-    m_deleteBtn = new QPushButton("❌ Удалить");
+    m_createBtn = new QPushButton("➕ Создать");
+    m_editBtn = new QPushButton("✏ Редактировать");
+    m_deleteBtn = new QPushButton("🗑 Удалить");
     m_addToFamilyBtn = new QPushButton("👪 Добавить в семью");
 
     top->addWidget(m_searchEdit, 1);
