@@ -18,14 +18,13 @@
 ## Быстрый старт и запуск
 
 ### Для Linux:
-1. Установите зависимости:
+1. Установите зависимости (только для Fedora):
 ```bash
-# Любой Debian 
-sudo apt-get install qt6-base-dev qt6-declarative-dev cmake build-essential
-
 # Fedora
 sudo dnf install qt6-qtbase-devel qt6-qtdeclarative-devel cmake gcc-c++
 ```
+
+# ЕСЛИ ИСПОЛЬЗУЕТЕ Debian - СРАЗУ ПЕРЕХОДИТЕ КО 2му шагу
 
 2. Клонируйте репозиторий:
 ```bash
